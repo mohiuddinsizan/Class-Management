@@ -1,7 +1,10 @@
 // src/api.js
 import axios from "axios";
 
-const api = axios.create({ baseURL: "/api" });
+const api = axios.create({
+  baseURL:
+    import.meta.env.VITE_API_BASE || "https://class-management-api.onrender.com/api",
+});
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
