@@ -1,0 +1,52 @@
+/* Page spacing */
+.page-completed{ display:grid; gap: var(--s-8); }
+
+/* Ensure Toolbar itself never causes left/right overflow */
+.toolbar{ max-width: 100%; overflow-x: hidden; }
+
+/* Filters grid (works with your Toolbar children) */
+.filters-grid{
+  --minw: 180px;
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: repeat(5, minmax(var(--minw), 1fr));
+  align-items: end;
+  min-width: 0;
+}
+.filters-grid .field,
+.filters-grid select,
+.filters-grid input{
+  width: 100%;
+  min-width: 0;
+}
+
+/* Desktop actions on the right (Toolbar's right prop) */
+.filters-actions.desktop{
+  display:flex; gap: var(--s-3); align-items:center; flex-wrap: wrap;
+}
+
+/* Mobile actions: hidden on desktop, shown and pushed below the filters */
+.filters-actions.mobile{
+  display:none;
+  margin-top: var(--s-3);
+  gap: var(--s-3);
+}
+
+/* Responsive breakpoints to prevent overlap and horizontal sliding */
+@media (max-width: 1200px){
+  .filters-grid{ grid-template-columns: repeat(3, minmax(var(--minw), 1fr)); }
+}
+@media (max-width: 860px){
+  .filters-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px){
+  .filters-grid{ grid-template-columns: 1fr; }
+  .filters-actions.desktop{ display:none; }
+  .filters-actions.mobile{ display:flex; flex-wrap:wrap; }
+}
+
+/* General guards against sideways scroll from this page */
+.page-completed, .filters-grid, .section, .table-wrap{
+  max-width: 100%;
+  overflow-x: hidden;
+}

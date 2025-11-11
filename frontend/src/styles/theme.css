@@ -1,0 +1,128 @@
+/* === DESIGN TOKENS ======================================================= */
+:root{
+  /* brand */
+  --bg:#0c0f22;
+  --surface:#121633;
+  --surface-2:#0f1430;
+  --text:#f1f3ff;
+  --muted:#9aa4d6;
+  --primary:#6c7bff;
+  --primary-2:#8e52ff;
+  --border:#262b56;
+  --success:#37d67a;
+  --warn:#f5a524;
+  --danger:#ff5470;
+  --accent:#4ffff2;
+
+  /* layout scale */
+  --container: 1200px;
+  --radius: 14px;
+  --radius-lg: 20px;
+
+  /* spacing scale (4px base) */
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* type scale */
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-18: 18px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-28: 28px;
+  --fs-32: 32px;
+
+  /* elevation */
+  --elev-1: 0 10px 30px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.03) inset;
+  --elev-2: 0 18px 50px rgba(108,123,255,.28);
+}
+
+/* === GLOBAL ============================================================== */
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0; color:var(--text);
+  background:
+    radial-gradient(1200px 600px at -10% -10%, #1b2050 0%, transparent 60%),
+    radial-gradient(1000px 500px at 110% 120%, #231b4a 0%, transparent 60%),
+    var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
+
+a{color:inherit;text-decoration:none}
+
+/* controls */
+input,select,textarea{
+  background: #0f1330; color: var(--text);
+  border:1px solid var(--border); border-radius: 12px;
+  padding: 10px 12px; width:100%; outline:none;
+}
+input::placeholder{color:#8190cf}
+
+/* layout */
+.container{max-width:var(--container); margin:0 auto; padding: var(--sp-8)}
+.grid{display:grid; gap: var(--sp-6)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+@media (max-width: 1100px){ .grid-3,.grid-4{grid-template-columns:repeat(2,1fr)} }
+@media (max-width: 800px){ .grid-2,.grid-3,.grid-4{grid-template-columns:1fr} }
+
+/* headings */
+.h1{font-weight:900; font-size:var(--fs-28); letter-spacing:.2px}
+.h2{font-weight:800; font-size:var(--fs-20); color:#cdd4ff}
+.h3{font-weight:700; font-size:var(--fs-16); color:#c7cbff}
+.subtle{color:var(--muted); font-size:var(--fs-13)}
+.hr{height:1px; background:var(--border); border:0; margin: var(--sp-6) 0}
+
+/* chips */
+.badge{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 10px; border-radius:999px; font-size:var(--fs-13);
+  background:#141838; border:1px solid var(--border); color:var(--muted)
+}
+.badge.ok{ color:#b2ffcf; background:#12261e; border-color:#2c6e49 }
+.badge.warn{ color:#ffe1ad; background:#261e12; border-color:#6e5a2c }
+.badge.err{ color:#ffd0d6; background:#26121a; border-color:#6e2c44 }
+
+/* card */
+.card{
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border:1px solid var(--border); border-radius: var(--radius);
+  padding: var(--sp-6); box-shadow: var(--elev-1);
+}
+
+/* buttons */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:10px 16px; border-radius:12px; cursor:pointer; border:1px solid transparent;
+  transition: transform .05s ease, filter .2s ease, box-shadow .2s ease; font-weight:700;
+}
+.btn:active{ transform: translateY(1px) }
+.btn-primary{ background: linear-gradient(135deg, var(--primary), var(--primary-2)); color:#fff; box-shadow: var(--elev-2) }
+.btn-ghost{ background:#0f1330; color:var(--muted); border-color:var(--border) }
+
+/* table (consistent density) */
+.table-wrap{overflow-x:auto}
+.table{
+  width:100%; border-collapse:separate; border-spacing:0 10px; font-size:var(--fs-14);
+}
+.table th{ text-align:left; color:#aeb6ff; font-weight:800; padding: 12px var(--sp-4) }
+.table td{
+  padding: 14px var(--sp-4); background:#0d1230;
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+}
+.table tr td:first-child{ border-left:1px solid var(--border); border-top-left-radius:12px; border-bottom-left-radius:12px }
+.table tr td:last-child{ border-right:1px solid var(--border); border-top-right-radius:12px; border-bottom-right-radius:12px }

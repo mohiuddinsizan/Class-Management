@@ -1,0 +1,48 @@
+/* src/styles/pages/home.css */
+.page-home{display:grid; gap: var(--s-8)}
+.home-stats{display:grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-6)}
+.home-grid{display:grid; grid-template-columns: repeat(3, minmax(240px, 1fr)); gap: var(--s-6)}
+@media (max-width: 1100px){ .home-grid{grid-template-columns: repeat(2, 1fr)} }
+@media (max-width: 720px){
+  .home-grid{grid-template-columns: 1fr}
+  .home-stats{grid-template-columns:1fr}
+}
+
+/* src/styles/pages/course.css */
+.page-course{display:grid; gap: var(--s-8)}
+.course-grid{display:grid; grid-template-columns: 1.2fr .8fr; gap: var(--s-8)}
+@media (max-width: 1100px){ .course-grid{grid-template-columns: 1fr} }
+
+/* src/styles/pages/pending.css */
+.page-pending{display:grid; gap: var(--s-8)}
+
+/* src/styles/pages/confirmation.css */
+.page-confirmation{display:grid; gap: var(--s-8)}
+
+/* src/styles/pages/completed.css */
+.page-completed{display:grid; gap: var(--s-8)}
+.completed-filters{display:grid; grid-template-columns: minmax(200px, 260px) minmax(200px, 260px) 160px 160px 160px; gap: var(--s-4)}
+@media (max-width: 1200px){ .completed-filters{grid-template-columns: repeat(3, minmax(160px,1fr))} }
+@media (max-width: 720px){ .completed-filters{grid-template-columns: 1fr} }
+
+/* src/styles/pages/unpaid.css */
+.page-unpaid{display:grid; gap: var(--s-8)}
+
+/* src/styles/pages/users.css */
+.page-users{display:grid; gap: var(--s-8)}
+.users-grid{display:grid; grid-template-columns: 1fr 1fr; gap: var(--s-8)}
+@media (max-width: 960px){ .users-grid{grid-template-columns: 1fr} }
+
+/* src/styles/pages/password.css */
+.page-password{display:grid; gap: var(--s-8)}
+.password-form{display:grid; grid-template-columns: 1fr 1fr; gap: var(--s-6)}
+.password-form .full{grid-column: 1 / -1}
+@media (max-width: 720px){ .password-form{grid-template-columns: 1fr} }
+
+/* Shared chips used in Course Create/Edit (if not present) */
+.people-grid{display:grid; gap: var(--s-4); grid-template-columns: repeat(2, minmax(220px, 1fr))}
+.person-chip{display:flex; flex-direction:column; gap:4px; padding:12px; border:1px solid var(--border); border-radius:12px; background:#0f1330; cursor:pointer}
+.person-chip input{display:none}
+.person-chip .role{font-size:12px; color:var(--muted)}
+.person-chip.selected{outline:2px solid var(--primary)}
+@media (max-width: 800px){ .people-grid{grid-template-columns: 1fr} }

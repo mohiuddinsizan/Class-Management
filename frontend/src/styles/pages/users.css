@@ -1,0 +1,3 @@
+.page-users{display:grid; gap: var(--s-8)}
+.users-grid{display:grid; grid-template-columns: 1fr 1fr; gap: var(--s-8)}
+@media (max-width: 960px){ .users-grid{grid-template-columns: 1fr} }

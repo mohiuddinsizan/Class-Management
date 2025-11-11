@@ -1,0 +1,5 @@
+/* src/styles/pages/confirmation.css */
+.page-confirmation{display:grid; gap: var(--s-8)}
+@media (max-width: 960px){
+  /* nothing special needed; wrapper ensures spacing on mobile too */
+}

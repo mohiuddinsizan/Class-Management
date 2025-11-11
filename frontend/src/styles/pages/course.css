@@ -1,0 +1,26 @@
+/* src/styles/pages/course.css */
+
+/* vertical rhythm for the two columns */
+.stack-y{ display:grid; gap: var(--sp-6); }
+
+/* two-column page layout */
+.page-course{ display:grid; gap: var(--sp-8); }
+.course-grid{
+  display:grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: var(--sp-8);
+}
+@media (max-width: 1100px){
+  .course-grid{ grid-template-columns: 1fr; }
+}
+
+/* forms inside tabs / section: consistent gaps and clean action row */
+.form-grid{
+  gap: var(--sp-4);
+}
+.form-actions{
+  grid-column: 1 / -1;                 /* span both columns */
+  display: flex;
+  justify-content: flex-end;           /* button to the right */
+  margin-top: var(--sp-2);
+}

@@ -1,0 +1,8 @@
+.page-reports{display:grid; gap: var(--s-8)}
+.reports-toolbar{display:grid; grid-template-columns: 1fr auto; gap: var(--s-4)}
+.reports-filters{display:grid; grid-template-columns: repeat(2, minmax(180px, 260px)); gap: var(--s-4)}
+.reports-stats{display:grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: var(--s-6)}
+@media (max-width: 960px){
+  .reports-filters{grid-template-columns: 1fr}
+  .reports-stats{grid-template-columns: 1fr}
+}

@@ -1,0 +1,134 @@
+/* ============ Global guards against horizontal scroll ============ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; width: 100%; overflow-x: hidden; }
+img, svg { max-width: 100%; height: auto; display: inline-block; }
+button, .btn { min-width: 0; } /* prevent flex children pushing width */
+.table, .content, .page { max-width: 100%; overflow-x: hidden; }
+
+/* ============ App layout (desktop) ============ */
+.layout{
+  display:grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  background: radial-gradient(1200px 800px at -10% -10%, rgba(97, 78, 255, .12), transparent 60%),
+              radial-gradient(1200px 800px at 110% 0%, rgba(0, 208, 255, .08), transparent 60%),
+              #0b0f29;
+}
+
+/* Sidebar (desktop) */
+.sidebar{
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 18px;
+  border-right: 1px solid var(--border);
+  background: #0e1334;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+.brand{
+  display:flex; align-items:center; gap:10px;
+  font-weight: 800; letter-spacing: .5px; margin-bottom: 6px;
+}
+.brand img{ width: 26px; height: 26px }
+
+/* Nav items (with icons) */
+.nav-item{
+  display:flex; align-items:center; gap:10px;
+  padding: 10px 12px; border-radius: 10px;
+  color:#cdd3ff; text-decoration:none; min-width: 0;
+}
+.nav-item:hover{ background: rgba(255,255,255,.06) }
+.nav-item.active{ background: linear-gradient(180deg, rgba(109,99,255,.22), rgba(0,184,255,.16)); color:white; }
+.nav-ico{ display:grid; place-items:center; width:20px; flex:0 0 20px; color:#aeb6ff; }
+.nav-text{ min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Content */
+.content{ padding: 22px; width: 100%; }
+
+/* ============ Mobile / Tablet ============ */
+.appbar{ display:none; }
+
+.backdrop{
+  display:none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 1200;
+}
+.backdrop.show{ display:block; }
+
+@media (max-width: 960px){
+  /* Layout becomes single column; appbar appears */
+  .layout{ grid-template-columns: 1fr; }
+
+  .appbar{
+    position: sticky; top: 0; z-index: 1100;
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 10px; padding: 10px 14px;
+    background: #0e1334; border-bottom: 1px solid var(--border);
+  }
+  .icon-btn{
+    width: 38px; height: 38px; display:grid; place-items:center;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: #0f153a; color: #cfd6ff; cursor:pointer;
+  }
+  .icon-btn:hover{ filter: brightness(1.05); }
+
+  .brand-row{ display:flex; align-items:center; gap: 10px; min-width: 0; }
+  .brand-icon{ width: 24px; height: 24px }
+  .brand-texts{ display:flex; flex-direction:column; min-width:0 }
+  .brand-name{ font-weight: 800; line-height:1 }
+  .brand-sub{ color:#a9b1ff; font-size: 12px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .desktop-only{ display:none }
+
+  /* Sidebar becomes a drawer */
+  .sidebar{
+    position: fixed; top: 0; left: 0;
+    height: 100vh; width: 80vw; max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 1300;
+    box-shadow: 0 10px 40px rgba(0,0,0,.4);
+  }
+  .sidebar.open{ transform: translateX(0); }
+
+  /* Prevent horizontal slide: drawer width ≤ 80vw and page can’t overflow */
+  .content{ padding: 16px; }
+  .page, .section, .table-wrap { max-width: 100%; overflow-x: hidden; }
+}
+
+/* Tiny phones */
+@media (max-width: 380px){
+  .brand-sub{ display:none; }
+}
+
+/* ============ Common responsive helpers to prevent overflow ============ */
+.page-header, .toolbar, .row { min-width: 0; }
+.grid{ min-width: 0; }
+.home-grid{ display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--s-6) }
+@media (max-width: 1100px){ .home-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 720px){ .home-grid{ grid-template-columns: minmax(0,1fr); } }
+
+/* Tables become cards (you likely already have this; keep or tweak) */
+@media (max-width: 720px){
+  .table{ width:100%; border-spacing:0; }
+  .table thead{ display:none }
+  .table tbody, .table tr, .table td{ display:block; width:100% }
+  .table tr{
+    background:#0d1230; border:1px solid var(--border);
+    border-radius:12px; box-shadow: var(--e1);
+    margin-bottom: var(--s-4); padding: var(--s-3);
+  }
+  .table td{ border:none; background:transparent; padding:10px 8px; position:relative; }
+  .table td::before{
+    content: attr(data-th);
+    display:inline-block; min-width: 42%;
+    color:#aeb6ff; font-weight:800; margin-right:8px;
+  }
+}

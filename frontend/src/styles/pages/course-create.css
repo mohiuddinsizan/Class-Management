@@ -1,0 +1,53 @@
+/* src/styles/pages/course-create.css */
+
+.page-course-create{
+  display:grid;
+  gap: var(--sp-8);
+}
+
+/* Two-column form; stacks on mobile */
+.course-create-form{
+  display:grid;
+  gap: var(--sp-6);
+  grid-template-columns: 1fr 1fr;
+}
+.course-create-form .full{ grid-column: 1 / -1; }
+
+@media (max-width: 800px){
+  .course-create-form{ grid-template-columns: 1fr; }
+}
+
+/* ===== People chips ===== */
+.people-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-5);
+}
+
+.person-chip{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap: 6px;
+  padding: 14px 16px;
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  background:#101538;
+  cursor:pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  line-height: 1.35;
+}
+.person-chip input{ position:absolute; opacity:0; pointer-events:none; }
+.person-chip > span:first-child{ font-weight:700; font-size: var(--fs-14); }
+.person-chip .role{ font-size: var(--fs-12); color: var(--muted); }
+
+.person-chip:hover{ background:#0f1436; border-color:#323a72; }
+.person-chip.selected{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+  background: linear-gradient(180deg, #111a49 0%, #0e153d 100%);
+}
+
+@media (max-width: 800px){
+  .people-grid{ grid-template-columns: repeat(1, minmax(260px, 1fr)); }
+}
