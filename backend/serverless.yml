@@ -1,0 +1,79 @@
+service: class-management-backend
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512 
+  timeout: 29  
+
+  environment:
+    MONGO_URI: ${env:MONGO_URI}
+    JWT_SECRET: ${env:JWT_SECRET}
+    NODE_ENV: production
+
+  # IAM Role Statements (if you need AWS services access)
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: '*'
+
+  # API Gateway CORS settings
+  apiGateway:
+    shouldStartNameWithService: true
+
+functions:
+  api:
+    handler: src/lambda.lambdaHandler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors:
+            origin: '*'  # In production, specify exact origins
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+      - http:
+          path: /
+          method: ANY
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+
+plugins:
+  - serverless-offline
+
+package:
+  patterns:
+    # - '!node_modules/**'
+    - '!.git/**'
+    - '!.vscode/**'
+    - '!scripts/**'
+    - '!.env*'
+    - '!*.md'
+    - '!.gitignore'
+  individually: false
+
+custom:
+  serverless-offline:
+    httpPort: 5000
+    host: 0.0.0.0

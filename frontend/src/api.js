@@ -14,8 +14,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_BASE ||
-    "https://class-management-1-80lu.onrender.com/api",
+    import.meta.env.VITE_API_BASE || "localhost:5000/dev/api",
 });
 
 api.interceptors.request.use((config) => {

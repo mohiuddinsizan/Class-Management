@@ -7,7 +7,13 @@
   "scripts": {
     "dev": "nodemon --env-file=.env src/index.js",
     "start": "node src/index.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "lambda:dev": "serverless offline",
+    "lambda:deploy": "serverless deploy",
+    "lambda:deploy:prod": "serverless deploy --stage prod",
+    "lambda:logs": "serverless logs -f api -t",
+    "lambda:info": "serverless info",
+    "lambda:remove": "serverless remove"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -15,10 +21,14 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.9.0"
+    "mongoose": "^8.9.0",
+    "nodemon": "^3.1.10",
+    "serverless-http": "^4.0.0",
+    "serverless-offline": "^14.4.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "serverless-offline": "^14.4.0"
   },
   "engines": {
     "node": ">=18"
