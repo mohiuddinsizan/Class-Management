@@ -1,3 +1,4 @@
+// src/pages/CourseDetail.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
@@ -9,7 +10,7 @@ import Button from "../components/Button";
 import { Field } from "../components/Field";
 import Empty from "../components/Empty";
 import "../styles/pages/course.css";           // layout + form actions
-import "../styles/pages/course-create.css";    // people chips
+import "../styles/pages/course-create.css";    // people chips (kept for other pages)
 
 export default function CourseDetail(){
   const { id } = useParams();
@@ -24,13 +25,13 @@ export default function CourseDetail(){
   const isAdmin = user?.role === "admin";
 
   // assign form
-  const [className, setClassName] = useState("");       // NEW: session name
+  const [className, setClassName] = useState("");       // session name
   const [teacherId, setTeacherId] = useState("");
   const [tpin, setTpin] = useState("");
   const [hours, setHours] = useState(1.5);
   const [rate, setRate] = useState(600);
 
-  // edit form (course) — supports multi
+  // edit form (course)
   const [edit, setEdit] = useState({
     name:"",
     numberOfClasses:0,
@@ -38,10 +39,9 @@ export default function CourseDetail(){
     assignedTeachers:[]
   });
 
-  // UI-only: improved people selector + edit/view mode
+  // UI-only for multi-select dropdown (inline styles only)
   const [openPeople, setOpenPeople] = useState(false);
   const [peopleQuery, setPeopleQuery] = useState("");
-  const [editMode, setEditMode] = useState(false); // false = read-only info, true = show form
 
   const load = async ()=>{
     // fetch course (active+archived so deep links always work)
@@ -89,7 +89,7 @@ export default function CourseDetail(){
     const payload = {
       courseId:id,
       teacherId,
-      name: className.trim(),                 // NEW: send session name
+      name: className.trim(),
       hours:Number(hours),
       hourlyRate:Number(rate)
     };
@@ -117,7 +117,6 @@ export default function CourseDetail(){
     };
     await api.patch(`/courses/${id}`, payload);
     await load();
-    setEditMode(false);
   };
 
   const archive = async ()=>{ await api.patch(`/courses/${id}/archive`); await load(); };
@@ -138,7 +137,7 @@ export default function CourseDetail(){
     isEmpty(pending) ? <Empty icon="⏳" title="No pending classes"/> :
     <Table
       columns={[
-        {key:"name",label:"Class"},                    // NEW
+        {key:"name",label:"Class"},
         {key:"teacherName",label:"Teacher"},
         {key:"teacherTpin",label:"TPIN"},
         {key:"hours",label:"Hours"},
@@ -165,7 +164,7 @@ export default function CourseDetail(){
     isEmpty(completed) ? <Empty icon="✅" title="No completed classes"/> :
     <Table
       columns={[
-        {key:"name",label:"Class"},                    // NEW
+        {key:"name",label:"Class"},
         {key:"teacherName",label:"Teacher"},
         {key:"teacherTpin",label:"TPIN"},
         {key:"hours",label:"Hours"},
@@ -189,7 +188,6 @@ export default function CourseDetail(){
     ? `People: ${assignedNames}`
     : "Unassigned";
 
-  // Derived UI helpers (presentational)
   const selectedCount = edit.assignedTeachers?.length || 0;
   const filteredTeachers = (teachers || []).filter(t => {
     const q = peopleQuery.trim().toLowerCase();
@@ -260,7 +258,7 @@ export default function CourseDetail(){
                     </Field>
 
                     {/* error */}
-                    {assignErr && <div className="full"><div className="badge warn">{assignErr}</div></div> }
+                    {assignErr && <div className="full"><div className="badge warn">{assignErr}</div></div>}
 
                     {/* full-width actions aligned to the right */}
                     <div className="form-actions">
@@ -275,330 +273,256 @@ export default function CourseDetail(){
           />
         </div>
 
-        {/* RIGHT: INFO PANEL + EDIT TOGGLE */}
+        {/* RIGHT: EDIT COURSE PANEL (same layout/theme; just better dropdown) */}
         <div className="stack-y">
           {isAdmin && (
-            <>
-              {/* READ-ONLY INFO: clean, no inputs */}
-              {!editMode && (
-                <Section
-                  title="Course Info"
-                  description="Overview of this course"
-                  actions={
-                    <Button
-                      variant="ghost"
-                      onClick={()=>setEditMode(true)}
-                      style={{ padding: "8px 12px" }}
+            <Section
+              title="Edit Course"
+              description="Update details anytime. Changes apply instantly."
+              actions={<div className="badge">{(edit.assignedTeachers?.length||0) > 0 ? "People assigned" : "No assignees"}</div>}
+            >
+              <form onSubmit={saveCourse} className="grid grid-2 form-grid">
+                <Field label="Name">
+                  <input value={edit.name} onChange={e=>setEdit(s=>({...s,name:e.target.value}))}/>
+                </Field>
+                <Field label="Number of classes">
+                  <input type="number" value={edit.numberOfClasses} onChange={e=>setEdit(s=>({...s,numberOfClasses:e.target.value}))}/>
+                </Field>
+                <Field label="Subjects (comma separated)">
+                  <input value={edit.subjects} onChange={e=>setEdit(s=>({...s,subjects:e.target.value}))}/>
+                </Field>
+
+                {/* Assigned people — compact, attractive, theme-aligned dropdown */}
+                <div className="full">
+                  <div className="h3" style={{ marginBottom: "var(--sp-2)" }}>Assigned people</div>
+
+                  <div style={{ position: "relative" }}>
+                    {/* Trigger */}
+                    <button
+                      type="button"
+                      onClick={()=>setOpenPeople(v=>!v)}
+                      style={{
+                        width:"100%",
+                        textAlign:"left",
+                        padding:"12px 14px",
+                        border:"1px solid var(--border)",
+                        borderRadius:"var(--radius)",
+                        background:"linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%)",
+                        color:"var(--text)",
+                        display:"flex",
+                        alignItems:"center",
+                        justifyContent:"space-between",
+                        gap:8,
+                        cursor:"pointer",
+                        boxShadow:"var(--elev-1)"
+                      }}
                     >
-                      Edit
-                    </Button>
-                  }
-                >
-                  <div className="grid grid-2" style={{ gap: "var(--sp-5)", padding: "var(--sp-3)" }}>
-                    <div className="card" style={{ padding: "var(--sp-4)" }}>
-                      <div className="subtle" style={{ marginBottom: 6 }}>Name</div>
-                      <div style={{ fontWeight: 800, fontSize: "var(--fs-16)" }}>{course?.name || "-"}</div>
-                    </div>
-
-                    <div className="card" style={{ padding: "var(--sp-4)" }}>
-                      <div className="subtle" style={{ marginBottom: 6 }}>Number of classes</div>
-                      <div style={{ fontWeight: 800, fontSize: "var(--fs-16)" }}>{course?.numberOfClasses ?? 0}</div>
-                    </div>
-
-                    <div className="card" style={{ padding: "var(--sp-4)" }}>
-                      <div className="subtle" style={{ marginBottom: 6 }}>Subjects</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {(course?.subjects && course.subjects.length>0) ? course.subjects.join(", ") : "-"}
-                      </div>
-                    </div>
-
-                    <div className="card" style={{ padding: "var(--sp-4)" }}>
-                      <div className="subtle" style={{ marginBottom: 6 }}>Assigned people</div>
-                      <div style={{ display: "flex", flexWrap:"wrap", gap: "8px" }}>
-                        {(course?.assignedTeachers || []).length === 0 && <span className="subtle">None</span>}
-                        {(course?.assignedTeachers || []).map(p => (
-                          <span key={p._id} className="badge">
-                            {p.name} · {p.role} · TPIN {p.tpin}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </Section>
-              )}
-
-              {/* EDIT MODE: original form with improved multi-select */}
-              {editMode && (
-                <Section
-                  title="Edit Course"
-                  description="Update details. Changes apply instantly upon save."
-                  actions={
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <Button
-                        variant="ghost"
-                        onClick={()=>{ setEditMode(false); load(); }}
-                        style={{ padding: "8px 12px" }}
+                      <span style={{ fontWeight:700 }}>
+                        {selectedCount>0 ? `${selectedCount} selected` : "Select people"}
+                      </span>
+                      <span
+                        style={{
+                          fontSize:"var(--fs-12)",
+                          color:"var(--muted)",
+                          background:"#141838",
+                          border:"1px solid var(--border)",
+                          padding:"2px 10px",
+                          borderRadius:999
+                        }}
                       >
-                        Cancel
-                      </Button>
-                    </div>
-                  }
-                >
-                  <form onSubmit={saveCourse} className="grid grid-2 form-grid">
-                    <Field label="Name">
-                      <input value={edit.name} onChange={e=>setEdit(s=>({...s,name:e.target.value}))}/>
-                    </Field>
-                    <Field label="Number of classes">
-                      <input type="number" value={edit.numberOfClasses} onChange={e=>setEdit(s=>({...s,numberOfClasses:e.target.value}))}/>
-                    </Field>
-                    <Field label="Subjects (comma separated)">
-                      <input value={edit.subjects} onChange={e=>setEdit(s=>({...s,subjects:e.target.value}))}/>
-                    </Field>
+                        teachers & admins
+                      </span>
+                    </button>
 
-                    {/* Multi-select: teachers + admins (Dropdown with custom checkboxes, inline styles) */}
-                    <div className="full">
-                      <div className="h3" style={{ marginBottom: "var(--sp-2)" }}>Assigned people</div>
+                    {/* Panel */}
+                    {openPeople && (
+                      <div
+                        style={{
+                          position:"absolute",
+                          zIndex:30,
+                          top:"calc(100% + 10px)",
+                          left:0,
+                          right:0,
+                          background:"linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%)",
+                          border:"1px solid var(--border)",
+                          borderRadius:"var(--radius-lg)",
+                          boxShadow:"var(--elev-2)",
+                          overflow:"hidden"
+                        }}
+                      >
+                        {/* Search */}
+                        <div style={{ padding:"10px", borderBottom:"1px solid var(--border)", background:"var(--surface-2)" }}>
+                          <input
+                            placeholder="Search name, role, or TPIN..."
+                            value={peopleQuery}
+                            onChange={(e)=>setPeopleQuery(e.target.value)}
+                            style={{
+                              width:"100%",
+                              padding:"10px 12px",
+                              border:"1px solid var(--border)",
+                              borderRadius:"12px",
+                              background:"#0f1330",
+                              color:"var(--text)",
+                              outline:"none"
+                            }}
+                          />
+                        </div>
 
-                      <div style={{ position: "relative" }}>
-                        {/* Trigger */}
-                        <button
-                          type="button"
-                          onClick={()=>setOpenPeople(v=>!v)}
+                        {/* List */}
+                        <div style={{ maxHeight: 320, overflowY:"auto" }}>
+                          {teachers.length===0 && (
+                            <div style={{ padding:14, color:"var(--muted)", fontSize:"var(--fs-13)" }}>
+                              No eligible users.
+                            </div>
+                          )}
+                          {teachers.length>0 && filteredTeachers.length===0 && (
+                            <div style={{ padding:14, color:"var(--muted)", fontSize:"var(--fs-13)" }}>
+                              No matches.
+                            </div>
+                          )}
+
+                          {filteredTeachers.map(t=>{
+                            const selected = edit.assignedTeachers?.includes(t._id);
+                            return (
+                              <label
+                                key={t._id}
+                                style={{
+                                  display:"grid",
+                                  gridTemplateColumns:"28px 1fr",
+                                  gap:12,
+                                  alignItems:"center",
+                                  padding:"12px 14px",
+                                  borderBottom:"1px solid var(--border)",
+                                  background:selected ? "#101538" : "transparent",
+                                  cursor:"pointer"
+                                }}
+                              >
+                                {/* native checkbox hidden; custom visual shown */}
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={()=>{
+                                    const has = edit.assignedTeachers.includes(t._id);
+                                    const next = has
+                                      ? edit.assignedTeachers.filter(x=>x!==t._id)
+                                      : [...edit.assignedTeachers, t._id];
+                                    setEdit(s=>({ ...s, assignedTeachers: next }));
+                                  }}
+                                  style={{ position:"absolute", opacity:0, pointerEvents:"none", width:0, height:0 }}
+                                />
+                                <span
+                                  aria-hidden
+                                  style={{
+                                    width:20,
+                                    height:20,
+                                    borderRadius:6,
+                                    border: selected ? "1px solid transparent" : "1px solid var(--border)",
+                                    background: selected
+                                      ? "linear-gradient(135deg, var(--primary), var(--primary-2))"
+                                      : "#0f1330",
+                                    display:"inline-flex",
+                                    alignItems:"center",
+                                    justifyContent:"center",
+                                    boxShadow: selected ? "var(--elev-2)" : "none"
+                                  }}
+                                >
+                                  {selected && (
+                                    <svg
+                                      width="12"
+                                      height="12"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="white"
+                                      strokeWidth="3"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <path d="M20 6L9 17l-5-5" />
+                                    </svg>
+                                  )}
+                                </span>
+
+                                <div style={{ display:"flex", flexDirection:"column", gap:2, minWidth:0 }}>
+                                  <div
+                                    style={{
+                                      fontWeight:700,
+                                      color:"var(--text)",
+                                      fontSize:"var(--fs-14)",
+                                      lineHeight:1.25,
+                                      whiteSpace:"nowrap",
+                                      overflow:"hidden",
+                                      textOverflow:"ellipsis"
+                                    }}
+                                    title={t.name}
+                                  >
+                                    {t.name}
+                                  </div>
+                                  <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"baseline" }}>
+                                    <span style={{ fontSize:"var(--fs-12)", color:"var(--muted)" }}>{t.role}</span>
+                                    <span style={{ fontSize:"var(--fs-12)", color:"var(--muted)" }}>TPIN {t.tpin}</span>
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer */}
+                        <div
                           style={{
-                            width:"100%",
-                            textAlign:"left",
-                            padding:"12px 14px",
-                            border:"1px solid var(--border)",
-                            borderRadius:"var(--radius)",
-                            background:"linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%)",
-                            color:"var(--text)",
+                            padding:10,
                             display:"flex",
-                            alignItems:"center",
                             justifyContent:"space-between",
-                            gap:8,
-                            cursor:"pointer",
-                            boxShadow:"var(--elev-1)"
+                            alignItems:"center",
+                            background:"var(--surface-2)",
+                            borderTop:"1px solid var(--border)"
                           }}
                         >
-                          <span style={{ fontWeight:700 }}>
-                            {selectedCount>0 ? `${selectedCount} selected` : "Select people"}
+                          <span style={{ fontSize:"var(--fs-12)", color:"var(--muted)" }}>
+                            {selectedCount} selected
                           </span>
-                          <span
-                            style={{
-                              fontSize:"var(--fs-12)",
-                              color:"var(--muted)",
-                              background:"#141838",
-                              border:"1px solid var(--border)",
-                              padding:"2px 10px",
-                              borderRadius:999
-                            }}
-                          >
-                            teachers & admins
-                          </span>
-                        </button>
-
-                        {/* Dropdown Panel */}
-                        {openPeople && (
-                          <div
-                            style={{
-                              position:"absolute",
-                              zIndex:20,
-                              top:"calc(100% + 10px)",
-                              left:0,
-                              right:0,
-                              background:"linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%)",
-                              border:"1px solid var(--border)",
-                              borderRadius:"var(--radius-lg)",
-                              boxShadow:"var(--elev-2)",
-                              overflow:"hidden"
-                            }}
-                          >
-                            {/* Search */}
-                            <div
+                          <div style={{ display:"flex", gap:8 }}>
+                            <button
+                              type="button"
+                              onClick={()=>setEdit(s=>({ ...s, assignedTeachers: [] }))}
                               style={{
-                                padding:"10px",
-                                borderBottom:"1px solid var(--border)",
-                                background:"var(--surface-2)"
+                                border:"1px solid var(--border)",
+                                background:"#0f1330",
+                                color:"var(--muted)",
+                                padding:"8px 12px",
+                                borderRadius:"10px",
+                                cursor:"pointer"
                               }}
                             >
-                              <input
-                                placeholder="Search name, role, or TPIN..."
-                                value={peopleQuery}
-                                onChange={(e)=>setPeopleQuery(e.target.value)}
-                                style={{
-                                  width:"100%",
-                                  padding:"10px 12px",
-                                  border:"1px solid var(--border)",
-                                  borderRadius:"12px",
-                                  background:"#0f1330",
-                                  color:"var(--text)",
-                                  outline:"none"
-                                }}
-                              />
-                            </div>
-
-                            {/* List */}
-                            <div style={{ maxHeight: 320, overflowY:"auto" }}>
-                              {teachers.length===0 && (
-                                <div style={{ padding:14, color:"var(--muted)", fontSize:"var(--fs-13)" }}>
-                                  No eligible users.
-                                </div>
-                              )}
-                              {teachers.length>0 && filteredTeachers.length===0 && (
-                                <div style={{ padding:14, color:"var(--muted)", fontSize:"var(--fs-13)" }}>
-                                  No matches.
-                                </div>
-                              )}
-
-                              {filteredTeachers.map(t=>{
-                                const selected = edit.assignedTeachers?.includes(t._id);
-                                return (
-                                  <label
-                                    key={t._id}
-                                    style={{
-                                      display:"grid",
-                                      gridTemplateColumns:"32px 1fr",
-                                      gap:12,
-                                      alignItems:"center",
-                                      padding:"12px 14px",
-                                      borderBottom:"1px solid var(--border)",
-                                      background:selected ? "#101538" : "transparent",
-                                      cursor:"pointer"
-                                    }}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={selected}
-                                      onChange={()=>{
-                                        const has = edit.assignedTeachers.includes(t._id);
-                                        const next = has
-                                          ? edit.assignedTeachers.filter(x=>x!==t._id)
-                                          : [...edit.assignedTeachers, t._id];
-                                        setEdit(s=>({ ...s, assignedTeachers: next }));
-                                      }}
-                                      style={{
-                                        position:"absolute",
-                                        opacity:0,
-                                        pointerEvents:"none",
-                                        width:0,
-                                        height:0
-                                      }}
-                                    />
-                                    <span
-                                      aria-hidden
-                                      style={{
-                                        width:22,
-                                        height:22,
-                                        borderRadius:6,
-                                        border: selected ? "1px solid transparent" : "1px solid var(--border)",
-                                        background: selected
-                                          ? "linear-gradient(135deg, var(--primary), var(--primary-2))"
-                                          : "#0f1330",
-                                        display:"inline-flex",
-                                        alignItems:"center",
-                                        justifyContent:"center",
-                                        boxShadow: selected ? "var(--elev-2)" : "none"
-                                      }}
-                                    >
-                                      {selected && (
-                                        <svg
-                                          width="14"
-                                          height="14"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="white"
-                                          strokeWidth="3"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                        >
-                                          <path d="M20 6L9 17l-5-5" />
-                                        </svg>
-                                      )}
-                                    </span>
-
-                                    <div style={{ display:"flex", flexDirection:"column", gap:2, minWidth:0 }}>
-                                      <div
-                                        style={{
-                                          fontWeight:700,
-                                          color:"var(--text)",
-                                          fontSize:"var(--fs-14)",
-                                          lineHeight:1.25,
-                                          whiteSpace:"nowrap",
-                                          overflow:"hidden",
-                                          textOverflow:"ellipsis"
-                                        }}
-                                        title={t.name}
-                                      >
-                                        {t.name}
-                                      </div>
-                                      <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"baseline" }}>
-                                        <span style={{ fontSize:"var(--fs-12)", color:"var(--muted)" }}>{t.role}</span>
-                                        <span style={{ fontSize:"var(--fs-12)", color:"var(--muted)" }}>TPIN {t.tpin}</span>
-                                      </div>
-                                    </div>
-                                  </label>
-                                );
-                              })}
-                            </div>
-
-                            {/* Footer */}
-                            <div
+                              Clear
+                            </button>
+                            <button
+                              type="button"
+                              onClick={()=>setOpenPeople(false)}
                               style={{
-                                padding:10,
-                                display:"flex",
-                                justifyContent:"space-between",
-                                alignItems:"center",
-                                background:"var(--surface-2)",
-                                borderTop:"1px solid var(--border)"
+                                background:"linear-gradient(135deg, var(--primary), var(--primary-2))",
+                                color:"#fff",
+                                padding:"8px 12px",
+                                border:"none",
+                                borderRadius:"10px",
+                                cursor:"pointer",
+                                boxShadow:"var(--elev-2)"
                               }}
                             >
-                              <span style={{ fontSize:"var(--fs-12)", color:"var(--muted)" }}>
-                                {selectedCount} selected
-                              </span>
-                              <div style={{ display:"flex", gap:8 }}>
-                                <button
-                                  type="button"
-                                  onClick={()=>{ setEdit(s=>({ ...s, assignedTeachers: [] })); }}
-                                  style={{
-                                    border:"1px solid var(--border)",
-                                    background:"#0f1330",
-                                    color:"var(--muted)",
-                                    padding:"8px 12px",
-                                    borderRadius:"10px",
-                                    cursor:"pointer"
-                                  }}
-                                >
-                                  Clear
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={()=>setOpenPeople(false)}
-                                  style={{
-                                    background:"linear-gradient(135deg, var(--primary), var(--primary-2))",
-                                    color:"#fff",
-                                    padding:"8px 12px",
-                                    border:"none",
-                                    borderRadius:"10px",
-                                    cursor:"pointer",
-                                    boxShadow:"var(--elev-2)"
-                                  }}
-                                >
-                                  Done
-                                </button>
-                              </div>
-                            </div>
+                              Done
+                            </button>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
+                </div>
 
-                    <div className="form-actions">
-                      <Button>Save Changes</Button>
-                    </div>
-                  </form>
-                </Section>
-              )}
-            </>
+                <div className="form-actions">
+                  <Button>Save Changes</Button>
+                </div>
+              </form>
+            </Section>
           )}
         </div>
       </div>
