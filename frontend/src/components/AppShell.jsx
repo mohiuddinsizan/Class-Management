@@ -99,6 +99,16 @@ function Icon({ name, size = 18 }) {
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
       );
+    case "reports":
+      return (
+        <svg {...common}>
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="8" y1="17" x2="8" y2="11" />
+          <line x1="12" y1="17" x2="12" y2="7" />
+          <line x1="16" y1="17" x2="16" y2="13" />
+        </svg>
+      );
+
     case "menu":
       return (
         <svg {...common}>
@@ -211,13 +221,6 @@ export default function AppShell({ children, onLogout }) {
           <img src="/bigbang.png" alt="" /> BIG BANG
         </div>
 
-        {/* Common (both roles) */}
-        <NavItem to="/" label="Pending" icon="pending" onNavigate={onNavigate} />
-        <NavItem to="/free-days" label="Free Days" icon="calendar" onNavigate={onNavigate} /> {/* <-- NEW */}
-        <NavItem to="/profile" label="Profile" icon="profile" onNavigate={onNavigate} />
-        <NavItem to="/password" label="Password" icon="lock" onNavigate={onNavigate} />
-
-        {/* Admin-only */}
         {isAdmin && (
           <>
             <NavItem to="/home" label="Home" icon="home" onNavigate={onNavigate} />
@@ -226,8 +229,19 @@ export default function AppShell({ children, onLogout }) {
             <NavItem to="/completed" label="Completed" icon="completed" onNavigate={onNavigate} />
             <NavItem to="/unpaid" label="Unpaid" icon="money" onNavigate={onNavigate} />
             <NavItem to="/users" label="Users" icon="users" onNavigate={onNavigate} />
+            <NavItem to="/reports" label="Reports" icon="reports" onNavigate={onNavigate} />
+
           </>
         )}
+
+        {/* Common (both roles) */}
+        <NavItem to="/" label="Pending" icon="pending" onNavigate={onNavigate} />
+        <NavItem to="/free-days" label="Free Days" icon="calendar" onNavigate={onNavigate} /> {/* <-- NEW */}
+        <NavItem to="/profile" label="Profile" icon="profile" onNavigate={onNavigate} />
+        <NavItem to="/password" label="Password" icon="lock" onNavigate={onNavigate} />
+
+        {/* Admin-only */}
+
 
         {/* Footer for user + logout */}
         {user && (

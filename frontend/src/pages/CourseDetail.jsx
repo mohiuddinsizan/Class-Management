@@ -39,6 +39,10 @@ export default function CourseDetail(){
     assignedTeachers:[]
   });
 
+  // UI-only state for nicer people selector (does not change your data flow)
+  const [openPeople, setOpenPeople] = useState(false);
+  const [peopleQuery, setPeopleQuery] = useState("");
+
   const load = async ()=>{
     // fetch course (active+archived so deep links always work)
     const active = await api.get("/courses?status=active");
@@ -184,6 +188,18 @@ export default function CourseDetail(){
     ? `People: ${assignedNames}`
     : "Unassigned";
 
+  // Derived UI helpers (purely presentational)
+  const selectedCount = edit.assignedTeachers?.length || 0;
+  const filteredTeachers = (teachers || []).filter(t => {
+    const q = peopleQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (t.name || "").toLowerCase().includes(q) ||
+      (t.role || "").toLowerCase().includes(q) ||
+      (t.tpin || "").toString().toLowerCase().includes(q)
+    );
+  });
+
   return (
     <>
       <PageHeader
@@ -227,7 +243,7 @@ export default function CourseDetail(){
                         <option value="">Select person</option>
                         {teachers.map(t=> (
                           <option key={t._id} value={t._id}>
-                            {t.name} ({t.role}) · {t.tpin}
+                            {t.name} — {t.role} · {t.tpin}
                           </option>
                         ))}
                       </select>
@@ -277,31 +293,170 @@ export default function CourseDetail(){
                   <input value={edit.subjects} onChange={e=>setEdit(s=>({...s,subjects:e.target.value}))}/>
                 </Field>
 
-                {/* Multi-select: teachers + admins */}
+                {/* Multi-select: teachers + admins (Dropdown with checkboxes, inline styles) */}
                 <div className="full">
                   <div className="h3" style={{marginBottom:"var(--sp-2)"}}>Assigned people</div>
-                  <div className="people-grid">
-                    {teachers.map(t => {
-                      const selected = edit.assignedTeachers?.includes(t._id);
-                      return (
-                        <label key={t._id} className={`person-chip ${selected ? "selected" : ""}`}>
+
+                  <div style={{ position:"relative" }}>
+                    {/* Trigger */}
+                    <button
+                      type="button"
+                      onClick={()=>setOpenPeople(v=>!v)}
+                      style={{
+                        width:"100%",
+                        textAlign:"left",
+                        padding:"12px 14px",
+                        border:"1px solid #e2e8f0",
+                        borderRadius:12,
+                        background:"#fff",
+                        display:"flex",
+                        alignItems:"center",
+                        justifyContent:"space-between",
+                        gap:8,
+                        cursor:"pointer",
+                        boxShadow:"0 1px 2px rgba(0,0,0,0.03)"
+                      }}
+                    >
+                      <span style={{ color:"#0f172a", fontWeight:600 }}>
+                        {selectedCount>0 ? `${selectedCount} selected` : "Select people"}
+                      </span>
+                      <span style={{
+                        fontSize:12,
+                        color:"#64748b",
+                        background:"#f1f5f9",
+                        padding:"2px 8px",
+                        borderRadius:999
+                      }}>
+                        teachers & admins
+                      </span>
+                    </button>
+
+                    {/* Dropdown Panel */}
+                    {openPeople && (
+                      <div
+                        style={{
+                          position:"absolute",
+                          zIndex:10,
+                          top:"calc(100% + 8px)",
+                          left:0,
+                          right:0,
+                          background:"#fff",
+                          border:"1px solid #e2e8f0",
+                          borderRadius:12,
+                          boxShadow:"0 10px 30px rgba(2,6,23,0.08)",
+                          maxHeight:360,
+                          overflow:"hidden",
+                        }}
+                      >
+                        {/* Search */}
+                        <div style={{ padding:12, borderBottom:"1px solid #eef2f7", background:"#fafafa" }}>
                           <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={()=>{
-                              const has = edit.assignedTeachers.includes(t._id);
-                              const next = has
-                                ? edit.assignedTeachers.filter(x=>x!==t._id)
-                                : [...edit.assignedTeachers, t._id];
-                              setEdit(s=>({ ...s, assignedTeachers: next }));
+                            placeholder="Search name, role, or TPIN…"
+                            value={peopleQuery}
+                            onChange={(e)=>setPeopleQuery(e.target.value)}
+                            style={{
+                              width:"100%",
+                              padding:"10px 12px",
+                              border:"1px solid #e2e8f0",
+                              borderRadius:10,
+                              outline:"none"
                             }}
                           />
-                          <span>{t.name}</span>
-                          <span className="role">{t.role} · TPIN {t.tpin}</span>
-                        </label>
-                      );
-                    })}
-                    {teachers.length===0 && <div className="subtle">No eligible users.</div>}
+                        </div>
+
+                        {/* List */}
+                        <div style={{ maxHeight:300, overflowY:"auto" }}>
+                          {teachers.length===0 && (
+                            <div style={{ padding:14, color:"#64748b", fontSize:14 }}>No eligible users.</div>
+                          )}
+                          {teachers.length>0 && filteredTeachers.length===0 && (
+                            <div style={{ padding:14, color:"#64748b", fontSize:14 }}>No matches.</div>
+                          )}
+                          {filteredTeachers.map(t=>{
+                            const selected = edit.assignedTeachers?.includes(t._id);
+                            return (
+                              <label
+                                key={t._id}
+                                style={{
+                                  display:"flex",
+                                  alignItems:"flex-start",
+                                  gap:10,
+                                  padding:"10px 14px",
+                                  cursor:"pointer",
+                                  borderBottom:"1px solid #f3f4f6",
+                                  background:selected ? "#f8fafc" : "#fff"
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={()=>{
+                                    const has = edit.assignedTeachers.includes(t._id);
+                                    const next = has
+                                      ? edit.assignedTeachers.filter(x=>x!==t._id)
+                                      : [...edit.assignedTeachers, t._id];
+                                    setEdit(s=>({ ...s, assignedTeachers: next }));
+                                  }}
+                                  style={{ marginTop:3 }}
+                                />
+                                <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                                  <div style={{ fontWeight:600, color:"#0f172a", lineHeight:1.2 }}>{t.name}</div>
+                                  <div style={{ fontSize:12, color:"#64748b", lineHeight:1.2 }}>
+                                    {t.role} · TPIN {t.tpin}
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer */}
+                        <div style={{
+                          padding:10,
+                          display:"flex",
+                          justifyContent:"space-between",
+                          alignItems:"center",
+                          background:"#fafafa",
+                          borderTop:"1px solid #eef2f7"
+                        }}>
+                          <span style={{ fontSize:12, color:"#64748b" }}>
+                            {selectedCount} selected
+                          </span>
+                          <div style={{ display:"flex", gap:8 }}>
+                            <button
+                              type="button"
+                              onClick={()=>{
+                                setEdit(s=>({ ...s, assignedTeachers: [] }));
+                              }}
+                              style={{
+                                border:"1px solid #e2e8f0",
+                                background:"#fff",
+                                padding:"8px 12px",
+                                borderRadius:10,
+                                cursor:"pointer"
+                              }}
+                            >
+                              Clear
+                            </button>
+                            <button
+                              type="button"
+                              onClick={()=>setOpenPeople(false)}
+                              style={{
+                                background:"#0ea5e9",
+                                color:"#fff",
+                                padding:"8px 12px",
+                                border:"none",
+                                borderRadius:10,
+                                cursor:"pointer",
+                                boxShadow:"0 1px 2px rgba(2,6,23,0.08)"
+                              }}
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
