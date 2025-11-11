@@ -1,3 +1,0 @@
-###
-GET https://dr1gqdhzoi.execute-api.ap-south-1.amazonaws.com/dev/health
-Content-Type: application/json
