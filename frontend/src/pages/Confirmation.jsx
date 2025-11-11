@@ -51,6 +51,7 @@ export default function Confirmation(){
   };
 
   const columns = [
+    {key:"name", label:"Class"},            // NEW
     {key:"course", label:"Course"},
     {key:"teacherName", label:"Teacher"},
     {key:"teacherTpin", label:"TPIN"},
@@ -82,6 +83,7 @@ export default function Confirmation(){
             rows={rows}
             renderCell={(c,row)=>{
               if(c.key==="course") return row.course?.name || "-";
+              if(c.key==="name") return row.name || <span className="subtle">—</span>;   // NEW
               if(c.key==="completedAt") return row.completedAt ? new Date(row.completedAt).toLocaleString() : "-";
               if(c.key==="_actions"){
                 return (

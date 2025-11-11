@@ -53,6 +53,7 @@ export default function Completed(){
   },[]);
 
   const columns = [
+    {key:"name", label:"Class"},          // NEW: class name
     {key:"course", label:"Course"},
     {key:"teacherName", label:"Teacher"},
     {key:"teacherTpin", label:"TPIN"},
@@ -132,21 +133,23 @@ export default function Completed(){
     const groups = Object.values(groupsIndex);
     const teacherCount = groups.length;
 
-    const teacherBlocks = groups.map((g, idx) => {
-      const rowsHtml = g.items.map((it, i) => {
-        const amt = Number(it.hours || 0) * Number(it.hourlyRate || 0);
-        return `
-          <tr>
-            <td>${i+1}</td>
-            <td>${escapeHtml(it.course?.name || "-")}</td>
-            <td>${escapeHtml(fmtDate(it.confirmedAt))}</td>
-            <td class="num">${it.hours ?? "-"}</td>
-            <td class="num">${money(it.hourlyRate ?? 0)}</td>
-            <td class="num">${money(amt)}</td>
-          </tr>
-        `;
-      }).join("");
+    const rowsHtmlForGroup = (items) => items.map((it, i) => {
+      const amt = Number(it.hours || 0) * Number(it.hourlyRate || 0);
+      return `
+        <tr>
+          <td>${i+1}</td>
+          <td>${escapeHtml(it.course?.name || "-")}</td>
+          <td>${escapeHtml(it.name || "—")}</td>        <!-- NEW: class name -->
+          <td>${escapeHtml(fmtDate(it.confirmedAt))}</td>
+          <td class="num">${it.hours ?? "-"}</td>
+          <td class="num">${money(it.hourlyRate ?? 0)}</td>
+          <td class="num">${money(amt)}</td>
+        </tr>
+      `;
+    }).join("");
 
+    const teacherBlocks = groups.map((g, idx) => {
+      const rowsHtml = rowsHtmlForGroup(g.items);
       const subTotal = g.items.reduce((sum,it) => sum + (Number(it.hours||0)*Number(it.hourlyRate||0)), 0);
 
       return `
@@ -158,13 +161,19 @@ export default function Completed(){
           <table class="bill-table">
             <thead>
               <tr>
-                <th>#</th><th>Course</th><th>Date/Time</th><th>Hours</th><th>Rate</th><th>Amount</th>
+                <th>#</th>
+                <th>Course</th>
+                <th>Class</th>           <!-- NEW header -->
+                <th>Date/Time</th>
+                <th>Hours</th>
+                <th>Rate</th>
+                <th>Amount</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
             <tfoot>
               <tr>
-                <td colspan="5" class="right"><b>Subtotal</b></td>
+                <td colspan="6" class="right"><b>Subtotal</b></td>
                 <td class="num"><b>${money(subTotal)}</b></td>
               </tr>
             </tfoot>
@@ -188,46 +197,27 @@ export default function Completed(){
 <meta charset="utf-8" />
 <title>BIGBANG • Daily Class Bill • ${billDay}</title>
 <style>
-  :root{
-    --text:#111827; --muted:#6b7280; --border:#e5e7eb; --primary:#6c7bff;
-  }
+  :root{ --text:#111827; --muted:#6b7280; --border:#e5e7eb; --primary:#6c7bff; }
   *{box-sizing:border-box}
   body{ font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial; color:var(--text); margin:0; }
-  .sheet{
-    max-width: 900px; margin: 28px auto; padding: 24px 28px;
-    border: 1px solid var(--border); border-radius: 12px;
-  }
-  .brand{
-    display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px;
-  }
-  .brand .title{
-    font-size: 22px; font-weight: 900; letter-spacing:.2px;
-  }
-  .brand .meta{
-    text-align:right; font-size: 12px; color: var(--muted);
-  }
+  .sheet{ max-width: 900px; margin: 28px auto; padding: 24px 28px; border: 1px solid var(--border); border-radius: 12px; }
+  .brand{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; }
+  .brand .title{ font-size: 22px; font-weight: 900; letter-spacing:.2px; }
+  .brand .meta{ text-align:right; font-size: 12px; color: var(--muted); }
   .badge{ display:inline-block; padding:4px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px; color:#374151; background:#f9fafb }
-  .totals{
-    display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin: 8px 0 18px;
-  }
+  .totals{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin: 8px 0 18px; }
   .teacher-block{ margin: 18px 0; page-break-inside: avoid; }
   .teacher-head{ display:flex; gap:20px; align-items:center; margin: 8px 0 10px; }
   .bill-table{ width:100%; border-collapse: collapse; }
-  .bill-table th, .bill-table td{
-    padding: 10px 12px; border: 1px solid var(--border); font-size: 13px;
-  }
+  .bill-table th, .bill-table td{ padding: 10px 12px; border: 1px solid var(--border); font-size: 13px; }
   .bill-table thead th{ background:#f3f4f6; text-align:left; }
   .bill-table .right{ text-align:right }
   .bill-table .num{ text-align:right; font-variant-numeric: tabular-nums; }
-  .signatures{
-    display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 22px;
-  }
+  .signatures{ display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 22px; }
   .sig .line{ height:1px; background:#111827; margin: 28px 0 6px; }
   .sig .cap{ font-size: 12px; color: var(--muted); }
   hr{ border:0; height:1px; background:var(--border); margin: 22px 0; }
-  @media print {
-    .sheet{ border:none; border-radius:0; margin:0; padding:0; }
-  }
+  @media print { .sheet{ border:none; border-radius:0; margin:0; padding:0; } }
 </style>
 </head>
 <body>
@@ -357,6 +347,7 @@ export default function Completed(){
             rows={rows}
             renderCell={(c,row)=>{
               if(c.key==="course") return row.course?.name || "-";
+              if(c.key==="name") return row.name || <span className="subtle">—</span>;  // NEW
               if(c.key==="confirmedAt") return row.confirmedAt ? new Date(row.confirmedAt).toLocaleString() : "-";
               if(c.key==="paid") return row.paid ? <span className="badge ok">Paid</span> : <span className="badge warn">Unpaid</span>;
               return row[c.key];
@@ -367,4 +358,3 @@ export default function Completed(){
     </div>
   );
 }
-

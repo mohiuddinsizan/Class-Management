@@ -51,3 +51,19 @@
 @media (max-width: 800px){
   .people-grid{ grid-template-columns: repeat(1, minmax(260px, 1fr)); }
 }
+
+
+/* Bring people chips in line with the form padding */
+.people-grid{
+  gap: var(--sp-4);
+}
+
+.person-chip{
+  padding: 16px 18px; /* a hair more padding */
+}
+
+/* When used inside a .form-grid .full row, add space above the header */
+.form-grid .full .h3{
+  margin-top: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}

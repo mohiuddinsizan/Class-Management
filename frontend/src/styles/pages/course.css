@@ -24,3 +24,104 @@
   justify-content: flex-end;           /* button to the right */
   margin-top: var(--sp-2);
 }
+
+
+
+
+
+
+
+/* ========== FORM: FIX OVERLAP + ADD PADDING (scoped) ========== */
+/* Scope only to forms inside CourseDetail tabs/sections */
+.course-grid form.form-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* prevents column overflow */
+  column-gap: var(--sp-6);
+  row-gap: var(--sp-5);
+  align-items: start;
+  padding: var(--sp-4);            /* real breathing room inside panel */
+  box-sizing: border-box;
+}
+
+/* Any item inside the grid shouldn't force overflow */
+.course-grid form.form-grid > *{
+  min-width: 0;                    /* key to stop children from overflowing columns */
+}
+
+/* Full-width rows already use .full — ensure it spans cleanly */
+.course-grid form.form-grid .full{
+  grid-column: 1 / -1;
+}
+
+/* Field wrapper: vertical stack + label spacing (covers common class names) */
+.course-grid form.form-grid :where(.field, .Field, .form-field){
+  display: flex;
+  flex-direction: column;
+  gap: 6px;                        /* space between label and control */
+}
+
+/* Inputs/selects/textarea: consistent height + padding + box sizing */
+.course-grid form.form-grid :where(input, select, textarea){
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface, #0f1436);
+  color: inherit;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  overflow: hidden;                 /* avoids text overlapping borders */
+  text-overflow: ellipsis;
+}
+
+/* Ensure selects don't blow the grid on long option text */
+.course-grid form.form-grid select{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Focus ring: visible but not obnoxious */
+.course-grid form.form-grid :where(input, select, textarea):focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+/* Labels inside Field */
+.course-grid form.form-grid label{
+  display: block;
+  margin: 0;                        /* Field handles spacing via gap */
+  font-size: var(--fs-12);
+  color: var(--muted);
+}
+
+/* Action row: space from fields; keep button to the right */
+.course-grid .form-actions{
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+/* Vertical rhythm for right/left columns feels cramped — loosen it */
+.stack-y{ gap: var(--sp-7); }
+
+/* Tabs/Section bodies sometimes feel tight: add interior padding safety net */
+.course-grid :where(.tabs-content, .section-body){
+  padding: var(--sp-3);
+  box-sizing: border-box;
+}
+
+/* Responsive: single column on smaller screens so nothing collides */
+@media (max-width: 980px){
+  .course-grid form.form-grid{
+    grid-template-columns: 1fr;
+    padding: var(--sp-3);
+    row-gap: var(--sp-4);
+  }
+}

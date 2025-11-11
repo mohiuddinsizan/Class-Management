@@ -54,6 +54,7 @@ export default function Pending(){
 
   // Table columns (admins see rate)
   const columns = [
+    {key:"name",label:"Class"},        // NEW
     {key:"course",label:"Course"},
     {key:"teacherName",label:"Teacher"},
     {key:"teacherTpin",label:"TPIN"},
@@ -83,6 +84,7 @@ export default function Pending(){
             rows={rows}
             renderCell={(c,row)=>{
               if(c.key==="course") return row.course?.name || "-";
+              if(c.key==="name") return row.name || <span className="subtle">—</span>;   {/* NEW */}
               if(c.key==="_actions"){
                 return (
                   <div style={{display:"flex",gap:8}}>

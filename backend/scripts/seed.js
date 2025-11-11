@@ -8,7 +8,7 @@ async function main() {
 
   const tpin = "447";
   const password = "87654321";
-  const name = "Main Admin";
+  const name = "Sizan";
 
   let admin = await User.findOne({ tpin });
   if (!admin) {

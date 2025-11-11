@@ -90,6 +90,15 @@ function Icon({ name, size = 18 }) {
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
       );
+    case "calendar": // <-- NEW
+      return (
+        <svg {...common}>
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      );
     case "menu":
       return (
         <svg {...common}>
@@ -146,15 +155,14 @@ export default function AppShell({ children, onLogout }) {
 
   const onNavigate = () => setOpen(false);
 
-  // Logout item that looks exactly like other nav items (no extra CSS needed)
   const LogoutItem = () => (
     <a
       href="/login"
       className="nav-item"
       onClick={(e) => {
-        e.preventDefault(); // keep SPA feel
+        e.preventDefault();
         onNavigate();
-        onLogout(); // clears storage + redirects
+        onLogout();
       }}
     >
       <span className="nav-ico">
@@ -184,14 +192,8 @@ export default function AppShell({ children, onLogout }) {
             <div className="brand-sub">BIGBANG CLASSES</div>
           </div>
         </div>
-        {/* small logout icon on the right (optional, uses same redirect) */}
         {user ? (
-          <button
-            className="icon-btn"
-            aria-label="Logout"
-            onClick={onLogout}
-            title="Logout"
-          >
+          <button className="icon-btn" aria-label="Logout" onClick={onLogout} title="Logout">
             <Icon name="logout" />
           </button>
         ) : (
@@ -210,72 +212,27 @@ export default function AppShell({ children, onLogout }) {
         </div>
 
         {/* Common (both roles) */}
-        <NavItem
-          to="/pending"
-          label="Pending"
-          icon="pending"
-          onNavigate={onNavigate}
-        />
-        <NavItem
-          to="/profile"
-          label="Profile"
-          icon="profile"
-          onNavigate={onNavigate}
-        />
-        <NavItem
-          to="/password"
-          label="Password"
-          icon="lock"
-          onNavigate={onNavigate}
-        />
+        <NavItem to="/" label="Pending" icon="pending" onNavigate={onNavigate} />
+        <NavItem to="/free-days" label="Free Days" icon="calendar" onNavigate={onNavigate} /> {/* <-- NEW */}
+        <NavItem to="/profile" label="Profile" icon="profile" onNavigate={onNavigate} />
+        <NavItem to="/password" label="Password" icon="lock" onNavigate={onNavigate} />
 
         {/* Admin-only */}
         {isAdmin && (
           <>
-            <NavItem to="/" label="Home" icon="home" onNavigate={onNavigate} />
-            <NavItem
-              to="/courses/new"
-              label="New Course"
-              icon="plus"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/confirmation"
-              label="Confirmation"
-              icon="confirm"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/completed"
-              label="Completed"
-              icon="completed"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/unpaid"
-              label="Unpaid"
-              icon="money"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/users"
-              label="Users"
-              icon="users"
-              onNavigate={onNavigate}
-            />
+            <NavItem to="/home" label="Home" icon="home" onNavigate={onNavigate} />
+            <NavItem to="/courses/new" label="New Course" icon="plus" onNavigate={onNavigate} />
+            <NavItem to="/confirmation" label="Confirmation" icon="confirm" onNavigate={onNavigate} />
+            <NavItem to="/completed" label="Completed" icon="completed" onNavigate={onNavigate} />
+            <NavItem to="/unpaid" label="Unpaid" icon="money" onNavigate={onNavigate} />
+            <NavItem to="/users" label="Users" icon="users" onNavigate={onNavigate} />
           </>
         )}
 
-        {/* Footer for user + logout (no new CSS) */}
+        {/* Footer for user + logout */}
         {user && (
           <div style={{ marginTop: "auto" }}>
-            <div
-              style={{
-                padding: "12px 12px 6px",
-                fontSize: 12,
-                opacity: 0.8,
-              }}
-            >
+            <div style={{ padding: "12px 12px 6px", fontSize: 12, opacity: 0.8 }}>
               Signed in as <b>{user.name || user.email}</b>
             </div>
             <LogoutItem />

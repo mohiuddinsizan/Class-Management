@@ -53,6 +53,7 @@ export default function Unpaid(){
   const total = rows.reduce((s,x)=> s + (x.amount || 0), 0);
 
   const columns = [
+    {key:"name", label:"Class"},             // NEW
     {key:"course", label:"Course"},
     {key:"teacherName", label:"Teacher"},
     {key:"teacherTpin", label:"TPIN"},
@@ -82,6 +83,7 @@ export default function Unpaid(){
             rows={rows}
             renderCell={(c,row)=>{
               if(c.key==="course") return row.course?.name || "-";
+              if(c.key==="name") return row.name || <span className="subtle">—</span>;  {/* NEW */}
               if(c.key==="amount") return fmt.format(row.amount || 0);
               if(c.key==="_actions"){
                 return (

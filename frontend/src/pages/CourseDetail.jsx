@@ -19,11 +19,13 @@ export default function CourseDetail(){
   const [pending, setPending] = useState([]);
   const [completed, setCompleted] = useState([]);
   const [teachers, setTeachers] = useState([]); // teachers + admins
+  const [assignErr, setAssignErr] = useState("");
 
   const user = useMemo(()=>JSON.parse(localStorage.getItem("user")||"null"),[]);
   const isAdmin = user?.role === "admin";
 
   // assign form
+  const [className, setClassName] = useState("");       // NEW: session name
   const [teacherId, setTeacherId] = useState("");
   const [tpin, setTpin] = useState("");
   const [hours, setHours] = useState(1.5);
@@ -79,14 +81,26 @@ export default function CourseDetail(){
   /* ------------------------------- actions ------------------------------- */
   const assign = async (e)=>{
     e.preventDefault();
-    await api.post("/classes/assign", {
+    setAssignErr("");
+    const payload = {
       courseId:id,
       teacherId,
+      name: className.trim(),                 // NEW: send session name
       hours:Number(hours),
       hourlyRate:Number(rate)
-    });
-    setTeacherId(""); setTpin(""); setHours(1.5); setRate(600);
-    await load();
+    };
+    if (!payload.name) {
+      setAssignErr("Please enter a class name.");
+      return;
+    }
+    try {
+      await api.post("/classes/assign", payload);
+      setClassName(""); setTeacherId(""); setTpin(""); setHours(1.5); setRate(600);
+      await load();
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Failed to assign class";
+      setAssignErr(msg);
+    }
   };
 
   const saveCourse = async (e)=>{
@@ -119,6 +133,7 @@ export default function CourseDetail(){
     isEmpty(pending) ? <Empty icon="⏳" title="No pending classes"/> :
     <Table
       columns={[
+        {key:"name",label:"Class"},                    // NEW
         {key:"teacherName",label:"Teacher"},
         {key:"teacherTpin",label:"TPIN"},
         {key:"hours",label:"Hours"},
@@ -135,6 +150,7 @@ export default function CourseDetail(){
             </div>
           );
         }
+        if (c.key === "name") return row.name || <span className="subtle">—</span>;
         return row[c.key];
       }}
     />
@@ -144,6 +160,7 @@ export default function CourseDetail(){
     isEmpty(completed) ? <Empty icon="✅" title="No completed classes"/> :
     <Table
       columns={[
+        {key:"name",label:"Class"},                    // NEW
         {key:"teacherName",label:"Teacher"},
         {key:"teacherTpin",label:"TPIN"},
         {key:"hours",label:"Hours"},
@@ -155,6 +172,7 @@ export default function CourseDetail(){
       renderCell={(c,row)=>{
         if(c.key==="confirmedAt") return row.confirmedAt ? new Date(row.confirmedAt).toLocaleString() : "-";
         if(c.key==="paid") return row.paid ? <span className="badge ok">Paid</span> : <span className="badge warn">Unpaid</span>;
+        if (c.key === "name") return row.name || <span className="subtle">—</span>;
         return row[c.key];
       }}
     />
@@ -196,8 +214,16 @@ export default function CourseDetail(){
                 label: "Assign",
                 content: (
                   <form onSubmit={assign} className="grid grid-2 form-grid">
+                    <Field label="Class name">
+                      <input
+                        value={className}
+                        onChange={e=>setClassName(e.target.value)}
+                        placeholder="e.g., Batch A – Week 3"
+                        required
+                      />
+                    </Field>
                     <Field label="Person (teacher or admin)">
-                      <select value={teacherId} onChange={e=>setTeacherId(e.target.value)}>
+                      <select value={teacherId} onChange={e=>setTeacherId(e.target.value)} required>
                         <option value="">Select person</option>
                         {teachers.map(t=> (
                           <option key={t._id} value={t._id}>
@@ -215,6 +241,9 @@ export default function CourseDetail(){
                     <Field label="Rate/hr (admin only)">
                       <input type="number" value={rate} onChange={e=>setRate(e.target.value)}/>
                     </Field>
+
+                    {/* error */}
+                    {assignErr && <div className="full"><div className="badge warn">{assignErr}</div></div>}
 
                     {/* full-width actions aligned to the right */}
                     <div className="form-actions">

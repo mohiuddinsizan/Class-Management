@@ -1,4 +1,3 @@
-// backend/src/routes/classes.routes.js
 import { Router } from "express";
 import { auth, isAdmin, isTeacherOrAdmin } from "../middleware/auth.js";
 import { ClassSession } from "../models/ClassSession.js";
@@ -11,7 +10,11 @@ const router = Router();
 // Admin only; assignee can be teacher OR admin (admins can teach)
 router.post("/assign", auth, isAdmin, async (req, res, next) => {
   try {
-    const { courseId, teacherId, hours = 1.5, hourlyRate = 600 } = req.body || {};
+    const { courseId, teacherId, name, hours = 1.5, hourlyRate = 600 } = req.body || {};
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: "Class name is required" });
+    }
+
     const course = await Course.findById(courseId);
     const teacher = await User.findById(teacherId);
     if (!course) return res.status(400).json({ error: "Invalid course" });
@@ -20,6 +23,7 @@ router.post("/assign", auth, isAdmin, async (req, res, next) => {
     }
 
     const created = await ClassSession.create({
+      name: String(name).trim(),
       course: course._id,
       teacher: teacher._id,
       teacherTpin: teacher.tpin,
@@ -29,8 +33,15 @@ router.post("/assign", auth, isAdmin, async (req, res, next) => {
       status: "pending",
       paid: false,
     });
+
     res.status(201).json(created);
-  } catch (e) { next(e); }
+  } catch (e) {
+    // Handle duplicate {course, name} nicely
+    if (e?.code === 11000) {
+      return res.status(409).json({ error: "A class with this name already exists for this course" });
+    }
+    next(e);
+  }
 });
 
 /* ------------------------------ PENDING ----------------------------- */
@@ -39,10 +50,13 @@ router.get("/pending", auth, isTeacherOrAdmin, async (req, res, next) => {
   try {
     const filter = { status: "pending" };
     if (req.user.role === "teacher") filter.teacher = req.user.id;
+
     const rows = await ClassSession.find(filter)
       .populate("course", "name")
       .populate("teacher", "name tpin")
       .lean();
+
+    // rows already include .name (session name)
     res.json(rows);
   } catch (e) { next(e); }
 });

@@ -17,6 +17,8 @@ import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
 import Password from "./pages/Password";
 import CourseCreate from "./pages/CourseCreate";
+import FreeDays from "./pages/FreeDays";
+
 
 // Redirect to /login when unauthenticated, preserving intended route
 function RequireAuth({ children }) {
@@ -48,17 +50,22 @@ export default function App() {
           <RequireAuth>
             <AppShell onLogout={onLogout}>
               <Routes>
-                <Route path="/" element={<Protected roles={["admin","teacher"]}><Home /></Protected>} />
-                <Route path="/courses/:id" element={<Protected roles={["admin","teacher"]}><CourseDetail /></Protected>} />
-                <Route path="/pending" element={<Protected roles={["admin","teacher"]}><Pending /></Protected>} />
+                <Route path="/home" element={<Protected roles={["admin", "teacher"]}><Home /></Protected>} />
+                <Route path="/" element={<Protected roles={["admin", "teacher"]}><Pending /></Protected>} />
+                <Route path="/courses/:id" element={<Protected roles={["admin", "teacher"]}><CourseDetail /></Protected>} />
+                <Route path="/pending" element={<Protected roles={["admin", "teacher"]}><Pending /></Protected>} />
                 <Route path="/confirmation" element={<Protected roles={["admin"]}><Confirmation /></Protected>} />
                 <Route path="/completed" element={<Protected roles={["admin"]}><Completed /></Protected>} />
                 <Route path="/unpaid" element={<Protected roles={["admin"]}><Unpaid /></Protected>} />
                 <Route path="/users" element={<Protected roles={["admin"]}><Users /></Protected>} />
-                <Route path="/profile" element={<Protected roles={["admin","teacher"]}><Profile /></Protected>} />
-                <Route path="/password" element={<Protected roles={["admin","teacher"]}><Password /></Protected>} />
+                <Route path="/profile" element={<Protected roles={["admin", "teacher"]}><Profile /></Protected>} />
+                <Route path="/password" element={<Protected roles={["admin", "teacher"]}><Password /></Protected>} />
                 <Route path="/courses/new" element={<Protected roles={["admin"]}><CourseCreate /></Protected>} />
                 <Route path="/reports" element={<Protected roles={["admin"]}><Reports /></Protected>} />
+                <Route
+                  path="/free-days"
+                  element={<Protected roles={["admin", "teacher"]}><FreeDays /></Protected>}
+                />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AppShell>

@@ -11,6 +11,8 @@ import classRoutes from "./routes/class.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import accountRoutes from "./routes/account.routes.js";
+import freeDayRoutes from "./routes/freeday.routes.js";
+
 
 const app = express();
 
@@ -43,6 +45,9 @@ app.use("/api/classes", classRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/account", accountRoutes);
+app.use("/api/free-days", freeDayRoutes);
+
+
 
 /* --------------------------- Error Middleware --------------------------- */
 app.use((err, _req, res, _next) => {
