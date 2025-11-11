@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://class-management-api.onrender.com/api/$1"
+    }
+  ]
+}
