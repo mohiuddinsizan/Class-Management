@@ -34,6 +34,8 @@ import profileRoutes from "./routes/profile.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import accountRoutes from "./routes/account.routes.js";
 import freeDayRoutes from "./routes/freeday.routes.js";
+import ratingRoutes from "./routes/rating.routes.js";   
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -43,6 +45,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/free-days", freeDayRoutes);
+app.use("/api/ratings", ratingRoutes);  
 
 /* --------------------------- Error Middleware --------------------------- */
 app.use((err, _req, res, _next) => {

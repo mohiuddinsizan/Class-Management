@@ -10,7 +10,9 @@ import { Field } from "../components/Field";
 import Empty from "../components/Empty";
 import "../styles/pages/completed.css";
 
-export default function Completed(){
+const today = new Date().toISOString().slice(0, 10);
+
+export default function Completed() {
   const [rows, setRows] = useState([]);
   const [courses, setCourses] = useState([]);
   const [people, setPeople] = useState([]); // teachers + admins
@@ -21,14 +23,16 @@ export default function Completed(){
     courseId: "",
     teacherId: "",
     tpin: "",
-    start: "",
-    end: ""
+    start: today,   // default: today
+    end: today      // default: today
   });
 
-  const loadRows = async (q={})=>{
+  const loadRows = async (q = {}) => {
     setLoading(true);
-    try{
-      const params = new URLSearchParams(Object.entries(q).filter(([_,v])=>v));
+    try {
+      const params = new URLSearchParams(
+        Object.entries(q).filter(([_, v]) => v)
+      );
       const r = await api.get(`/classes/completed?${params.toString()}`);
       setRows(r.data || []);
     } finally {
@@ -36,56 +40,83 @@ export default function Completed(){
     }
   };
 
-  const resetFilters = ()=>{
-    const empty = { courseId:"", teacherId:"", tpin:"", start:"", end:"" };
-    setFilters(empty);
-    loadRows(empty);
+  const resetFilters = () => {
+    const base = {
+      courseId: "",
+      teacherId: "",
+      tpin: "",
+      start: today,  // reset back to today
+      end: today
+    };
+    setFilters(base);
+    loadRows(base);  // only today's completed classes
   };
 
-  useEffect(()=>{
-    api.get("/courses?status=active").then(r=>setCourses(r.data || []));
+  useEffect(() => {
+    api.get("/courses?status=active").then((r) => setCourses(r.data || []));
     Promise.all([
-      api.get("/users",{ params:{ role:"teacher" }}),
-      api.get("/users",{ params:{ role:"admin" }})
-    ]).then(([t,a]) => setPeople([...(t.data||[]), ...(a.data||[])])
-    ).catch(()=>setPeople([]));
-    loadRows({});
-  },[]);
+      api.get("/users", { params: { role: "teacher" } }),
+      api.get("/users", { params: { role: "admin" } }),
+    ])
+      .then(([t, a]) => setPeople([...(t.data || []), ...(a.data || [])]))
+      .catch(() => setPeople([]));
+
+    // initial load: ONLY today's completed classes
+    loadRows({ start: today, end: today });
+  }, []);
 
   const columns = [
-    {key:"name", label:"Class"},          // NEW: class name
-    {key:"course", label:"Course"},
-    {key:"teacherName", label:"Teacher"},
-    {key:"teacherTpin", label:"TPIN"},
-    {key:"hours", label:"Hours"},
-    {key:"hourlyRate", label:"Rate/hr"},
-    {key:"confirmedAt", label:"Confirmed At"},
-    {key:"paid", label:"Paid"}
+    { key: "name", label: "Class" }, // NEW: class name
+    { key: "course", label: "Course" },
+    { key: "teacherName", label: "Teacher" },
+    { key: "teacherTpin", label: "TPIN" },
+    { key: "hours", label: "Hours" },
+    { key: "hourlyRate", label: "Rate/hr" },
+    { key: "confirmedAt", label: "Confirmed At" },
+    { key: "paid", label: "Paid" },
   ];
 
   /* ----------------------------- helpers ----------------------------- */
   const fmtDate = (d) => {
-    try { return new Date(d).toLocaleString(); } catch { return "-"; }
+    try {
+      return new Date(d).toLocaleString();
+    } catch {
+      return "-";
+    }
   };
   const onlyDate = (d) => {
-    try { return new Date(d).toISOString().slice(0,10); } catch { return ""; }
+    try {
+      return new Date(d).toISOString().slice(0, 10);
+    } catch {
+      return "";
+    }
   };
-  const money = (n) => (Number(n||0)).toLocaleString(undefined, { minimumFractionDigits: 0 });
+  const money = (n) =>
+    Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0 });
 
   // If Start == End → that day; else if only Start → that day; else default today
   const billDay = useMemo(() => {
-    if (filters.start && filters.end && filters.start === filters.end) return filters.start;
+    if (filters.start && filters.end && filters.start === filters.end)
+      return filters.start;
     if (filters.start && !filters.end) return filters.start;
-    return new Date().toISOString().slice(0,10);
+    return today;
   }, [filters.start, filters.end]);
 
   const rowsForBill = useMemo(() => {
     const day = billDay;
-    return rows.filter(r => onlyDate(r.confirmedAt) === day);
+    return rows.filter((r) => onlyDate(r.confirmedAt) === day);
   }, [rows, billDay]);
 
   const escapeHtml = (s) =>
-    String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    String(s ?? "").replace(/[&<>"']/g, (m) => (
+      {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[m]
+    ));
 
   /* ------------------------ mark paid + download ----------------------- */
 
@@ -95,7 +126,7 @@ export default function Completed(){
     try {
       await api.post(`/classes/paid/batch`, { ids });
     } catch {
-      await Promise.all(ids.map(id => api.patch(`/classes/${id}/paid`)));
+      await Promise.all(ids.map((id) => api.patch(`/classes/${id}/paid`)));
     }
   };
 
@@ -125,19 +156,26 @@ export default function Completed(){
   const buildBillHtml = () => {
     // Group by teacher
     const groupsIndex = {};
-    rowsForBill.forEach(r => {
+    rowsForBill.forEach((r) => {
       const key = `${r.teacherId || r.teacherName || "unknown"}`;
-      if (!groupsIndex[key]) groupsIndex[key] = { name: r.teacherName, tpin: r.teacherTpin, items: [] };
+      if (!groupsIndex[key])
+        groupsIndex[key] = {
+          name: r.teacherName,
+          tpin: r.teacherTpin,
+          items: [],
+        };
       groupsIndex[key].items.push(r);
     });
     const groups = Object.values(groupsIndex);
     const teacherCount = groups.length;
 
-    const rowsHtmlForGroup = (items) => items.map((it, i) => {
-      const amt = Number(it.hours || 0) * Number(it.hourlyRate || 0);
-      return `
+    const rowsHtmlForGroup = (items) =>
+      items
+        .map((it, i) => {
+          const amt = Number(it.hours || 0) * Number(it.hourlyRate || 0);
+          return `
         <tr>
-          <td>${i+1}</td>
+          <td>${i + 1}</td>
           <td>${escapeHtml(it.course?.name || "-")}</td>
           <td>${escapeHtml(it.name || "—")}</td>        <!-- NEW: class name -->
           <td>${escapeHtml(fmtDate(it.confirmedAt))}</td>
@@ -146,13 +184,19 @@ export default function Completed(){
           <td class="num">${money(amt)}</td>
         </tr>
       `;
-    }).join("");
+        })
+        .join("");
 
-    const teacherBlocks = groups.map((g, idx) => {
-      const rowsHtml = rowsHtmlForGroup(g.items);
-      const subTotal = g.items.reduce((sum,it) => sum + (Number(it.hours||0)*Number(it.hourlyRate||0)), 0);
+    const teacherBlocks = groups
+      .map((g, idx) => {
+        const rowsHtml = rowsHtmlForGroup(g.items);
+        const subTotal = g.items.reduce(
+          (sum, it) =>
+            sum + Number(it.hours || 0) * Number(it.hourlyRate || 0),
+          0
+        );
 
-      return `
+        return `
         <section class="teacher-block">
           <div class="teacher-head">
             <div><b>Teacher:</b> ${escapeHtml(g.name || "-")}</div>
@@ -180,15 +224,26 @@ export default function Completed(){
           </table>
 
           <div class="signatures">
-            <div class="sig"><div class="line"></div><div class="cap">${escapeHtml(g.name || "Teacher")}</div></div>
-            <div class="sig"><div class="line"></div><div class="cap">In-Charge (BIGBANG)</div></div>
+            <div class="sig">
+              <div class="line"></div>
+              <div class="cap">Teacher Signature</div>
+            </div>
+            <div class="sig">
+              <div class="line"></div>
+              <div class="cap">In-Charge Signature</div>
+            </div>
           </div>
         </section>
-        ${idx < groups.length-1 ? '<hr/>' : ''}
+        ${idx < groups.length - 1 ? "<hr/>" : ""}
       `;
-    }).join("");
+      })
+      .join("");
 
-    const grand = rowsForBill.reduce((sum,it)=> sum + (Number(it.hours||0)*Number(it.hourlyRate||0)), 0);
+    const grand = rowsForBill.reduce(
+      (sum, it) =>
+        sum + Number(it.hours || 0) * Number(it.hourlyRate || 0),
+      0
+    );
 
     return `
 <!doctype html>
@@ -243,19 +298,19 @@ export default function Completed(){
     `;
   };
 
-  const onDownloadBill = async ()=>{
+  const onDownloadBill = async () => {
     const list = rowsForBill;
     if (!list || list.length === 0) {
       alert("No completed classes for the selected date.");
       return;
     }
     setDownloading(true);
-    try{
+    try {
       // 1) Mark all included classes as PAID
-      const ids = list.map(r => r._id).filter(Boolean);
+      const ids = list.map((r) => r._id).filter(Boolean);
       await markBillAsPaid(ids);
 
-      // 2) Refresh table so Paid badges update
+      // 2) Refresh table so Paid badges update, using current filters
       await loadRows(filters);
 
       // 3) Build HTML and print via hidden iframe (no popups)
@@ -269,10 +324,25 @@ export default function Completed(){
   /* ----------------------------- UI ----------------------------- */
 
   const Actions = ({ className }) => (
-    <div className={`filters-actions ${className||""}`}>
-      <Button variant="ghost" onClick={resetFilters} disabled={loading || downloading}>Reset</Button>
-      <Button variant="ghost" onClick={()=>loadRows(filters)} disabled={loading || downloading}>Apply Filters</Button>
-      <Button onClick={onDownloadBill} disabled={loading || downloading || rowsForBill.length===0}>
+    <div className={`filters-actions ${className || ""}`}>
+      <Button
+        variant="ghost"
+        onClick={resetFilters}
+        disabled={loading || downloading}
+      >
+        Reset
+      </Button>
+      <Button
+        variant="ghost"
+        onClick={() => loadRows(filters)}
+        disabled={loading || downloading}
+      >
+        Apply Filters
+      </Button>
+      <Button
+        onClick={onDownloadBill}
+        disabled={loading || downloading || rowsForBill.length === 0}
+      >
         {downloading ? "Processing…" : "Mark Paid & Download Bill (PDF)"}
       </Button>
     </div>
@@ -292,27 +362,41 @@ export default function Completed(){
           <Field label="Course">
             <select
               value={filters.courseId}
-              onChange={e=>setFilters(s=>({...s,courseId:e.target.value}))}
+              onChange={(e) =>
+                setFilters((s) => ({ ...s, courseId: e.target.value }))
+              }
             >
               <option value="">All</option>
-              {courses.map(c=> <option key={c._id} value={c._id}>{c.name}</option>)}
+              {courses.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </Field>
 
           <Field label="Teacher/Admin">
             <select
               value={filters.teacherId}
-              onChange={e=>setFilters(s=>({...s,teacherId:e.target.value}))}
+              onChange={(e) =>
+                setFilters((s) => ({ ...s, teacherId: e.target.value }))
+              }
             >
               <option value="">All</option>
-              {people.map(p=> <option key={p._id} value={p._id}>{p.name} ({p.role})</option>)}
+              {people.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.name} ({p.role})
+                </option>
+              ))}
             </select>
           </Field>
 
           <Field label="TPIN">
             <input
               value={filters.tpin}
-              onChange={e=>setFilters(s=>({...s,tpin:e.target.value}))}
+              onChange={(e) =>
+                setFilters((s) => ({ ...s, tpin: e.target.value }))
+              }
               placeholder="Optional"
             />
           </Field>
@@ -321,7 +405,9 @@ export default function Completed(){
             <input
               type="date"
               value={filters.start}
-              onChange={e=>setFilters(s=>({...s,start:e.target.value}))}
+              onChange={(e) =>
+                setFilters((s) => ({ ...s, start: e.target.value }))
+              }
             />
           </Field>
 
@@ -329,7 +415,9 @@ export default function Completed(){
             <input
               type="date"
               value={filters.end}
-              onChange={e=>setFilters(s=>({...s,end:e.target.value}))}
+              onChange={(e) =>
+                setFilters((s) => ({ ...s, end: e.target.value }))
+              }
             />
           </Field>
         </div>
@@ -339,17 +427,29 @@ export default function Completed(){
       </Toolbar>
 
       <Section>
-        {rows.length===0 ? (
-          <Empty icon="📗" title={loading ? "Loading..." : "No completed classes for filters"} />
+        {rows.length === 0 ? (
+          <Empty
+            icon="📗"
+            title={loading ? "Loading..." : "No completed classes for filters"}
+          />
         ) : (
           <Table
             columns={columns}
             rows={rows}
-            renderCell={(c,row)=>{
-              if(c.key==="course") return row.course?.name || "-";
-              if(c.key==="name") return row.name || <span className="subtle">—</span>;  // NEW
-              if(c.key==="confirmedAt") return row.confirmedAt ? new Date(row.confirmedAt).toLocaleString() : "-";
-              if(c.key==="paid") return row.paid ? <span className="badge ok">Paid</span> : <span className="badge warn">Unpaid</span>;
+            renderCell={(c, row) => {
+              if (c.key === "course") return row.course?.name || "-";
+              if (c.key === "name")
+                return row.name || <span className="subtle">—</span>; // NEW
+              if (c.key === "confirmedAt")
+                return row.confirmedAt
+                  ? new Date(row.confirmedAt).toLocaleString()
+                  : "-";
+              if (c.key === "paid")
+                return row.paid ? (
+                  <span className="badge ok">Paid</span>
+                ) : (
+                  <span className="badge warn">Unpaid</span>
+                );
               return row[c.key];
             }}
           />

@@ -1,0 +1,35 @@
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--star-size, 20px);
+  line-height: 1;
+}
+
+.star-rating-inner {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+}
+
+.star-rating-inner .stars-bg,
+.star-rating-inner .stars-fill {
+  letter-spacing: 2px;
+}
+
+.star-rating-inner .stars-bg {
+  color: #e5e7eb; /* light gray */
+}
+
+.star-rating-inner .stars-fill {
+  color: #fbbf24; /* amber */
+  position: absolute;
+  inset: 0;
+  overflow: hidden; /* gives fractional fill */
+  white-space: nowrap;
+}
+
+.star-rating .star-value {
+  font-size: 0.8em;
+  color: #4b5563;
+}
