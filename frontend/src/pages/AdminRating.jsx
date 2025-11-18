@@ -52,7 +52,7 @@ export default function AdminRatings() {
 
   /* ---------------------- Load rating by TPIN ---------------------- */
   const loadByTpin = async (tpinValue) => {
-    const raw = (tpinValue ?? tpin).trim();
+    const raw = String(tpinValue ?? tpin).trim();
     if (!raw) return;
     setLoadingUserRatings(true);
     try {
@@ -118,7 +118,7 @@ export default function AdminRatings() {
       </div>
 
       {/* Responsive layout: 2 columns on desktop, 1 on mobile (via .grid-2 CSS) */}
-      <div className="grid grid-2">
+      <div className="grid grid-2" style={{ gap: "var(--sp-4)" }}>
         {/* LEFT: User list + search */}
         <div
           style={{
@@ -195,7 +195,7 @@ export default function AdminRatings() {
                           cursor: "pointer",
                           display: "flex",
                           flexDirection: "column",
-                          gap: 2,
+                          gap: 4,
                         }}
                       >
                         <span
@@ -242,15 +242,17 @@ export default function AdminRatings() {
             border: "1px solid var(--border)",
             padding: "var(--sp-5)",
             minHeight: 260,
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--sp-4)",
           }}
         >
-          {/* TPIN + Load row (stacks on small screens because of row+flex-wrap) */}
+          {/* TPIN + Load row */}
           <div
             className="row"
             style={{
               gap: "var(--sp-3)",
-              alignItems: "center",
-              marginBottom: "var(--sp-4)",
+              alignItems: "flex-end", // 👈 aligns input + button bottoms
               flexWrap: "wrap",
             }}
           >
@@ -267,9 +269,14 @@ export default function AdminRatings() {
                 onChange={(e) => setTpin(e.target.value)}
               />
             </div>
-            <Button onClick={() => loadByTpin()} disabled={loadingUserRatings}>
-              {loadingUserRatings ? "Loading..." : "Load"}
-            </Button>
+            <div>
+              <Button
+                onClick={() => loadByTpin()}
+                disabled={loadingUserRatings}
+              >
+                {loadingUserRatings ? "Loading..." : "Load"}
+              </Button>
+            </div>
           </div>
 
           {!block ? (
@@ -285,7 +292,6 @@ export default function AdminRatings() {
                 style={{
                   justifyContent: "space-between",
                   alignItems: "flex-start",
-                  marginBottom: "var(--sp-3)",
                   gap: "var(--sp-3)",
                   flexWrap: "wrap",
                 }}
@@ -323,9 +329,7 @@ export default function AdminRatings() {
                       <span className="badge">
                         Latest: {stats.latest.toFixed(1)}
                       </span>
-                      <span className="badge">
-                        Entries: {stats.count}
-                      </span>
+                      <span className="badge">Entries: {stats.count}</span>
                     </>
                   ) : (
                     <span className="badge subtle">No ratings yet</span>
@@ -336,10 +340,8 @@ export default function AdminRatings() {
               <div className="hr" />
 
               {/* New rating editor */}
-              <div style={{ marginBottom: "var(--sp-4)" }}>
-                <div className="h3" style={{ marginBottom: "var(--sp-2)" }}>
-                  Add Rating Comment
-                </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
+                <div className="h3">Add Rating Comment</div>
 
                 <div
                   className="row"
@@ -347,7 +349,6 @@ export default function AdminRatings() {
                     alignItems: "center",
                     gap: "var(--sp-4)",
                     flexWrap: "wrap",
-                    marginBottom: "var(--sp-3)",
                   }}
                 >
                   <div
@@ -355,11 +356,12 @@ export default function AdminRatings() {
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
+                      minWidth: 0,
                     }}
                   >
                     <StarRating value={numericScore} size={22} showValue />
                   </div>
-                  <div style={{ maxWidth: 140, width: "100%" }}>
+                  <div style={{ maxWidth: 160, width: "100%" }}>
                     <label
                       className="subtle"
                       style={{ display: "block", marginBottom: 4 }}
@@ -378,7 +380,7 @@ export default function AdminRatings() {
                   </div>
                 </div>
 
-                <div style={{ marginBottom: "var(--sp-3)" }}>
+                <div>
                   <label
                     className="subtle"
                     style={{ display: "block", marginBottom: 4 }}
@@ -387,7 +389,7 @@ export default function AdminRatings() {
                   </label>
                   <textarea
                     rows={3}
-                    style={{ width: "100%" }}
+                    style={{ width: "100%", resize: "vertical" }}
                     placeholder="Internal note: performance, behavior, improvements, etc."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
@@ -409,10 +411,8 @@ export default function AdminRatings() {
               <div className="hr" />
 
               {/* History */}
-              <div>
-                <div className="h3" style={{ marginBottom: "var(--sp-3)" }}>
-                  History (Newest first)
-                </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
+                <div className="h3">History (Newest first)</div>
                 {notes.length === 0 ? (
                   <div className="subtle">No ratings yet.</div>
                 ) : (
