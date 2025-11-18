@@ -13,16 +13,26 @@ provider:
     JWT_SECRET: ${env:JWT_SECRET}
     NODE_ENV: production
 
-  # IAM Role Statements (if you need AWS services access)
+  # # IAM Role Statements
+  # iam:
+  #   role:
+  #     statements:
+  #       - Effect: Allow
+  #         Action:
+  #           - logs:CreateLogGroup
+  #           - logs:CreateLogStream
+  #           - logs:PutLogEvents
+  #         Resource: '*'
+
   iam:
     role:
       statements:
-        - Effect: Allow
+        - Effect: Deny
           Action:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
-          Resource: '*'
+          Resource: "*"
 
   # API Gateway CORS settings
   apiGateway:
