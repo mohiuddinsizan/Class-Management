@@ -45,6 +45,8 @@ export default function Navbar({ user, onLogout }){
                   <Tab to="/unpaid">Unpaid</Tab>
                   <Tab to="/users">Users</Tab>
                   <Tab to="/reports">Reports</Tab>
+                  {/* NEW: Ratings tab for admin only */}
+                  <Tab to="/ratings">Ratings</Tab>
                 </>
               )}
               <Tab to="/profile">Profile</Tab>

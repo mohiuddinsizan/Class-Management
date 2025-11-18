@@ -90,7 +90,7 @@ function Icon({ name, size = 18 }) {
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
       );
-    case "calendar": // <-- NEW
+    case "calendar":
       return (
         <svg {...common}>
           <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -108,7 +108,12 @@ function Icon({ name, size = 18 }) {
           <line x1="16" y1="17" x2="16" y2="13" />
         </svg>
       );
-
+    case "star": // NEW: Ratings icon
+      return (
+        <svg {...common}>
+          <polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" />
+        </svg>
+      );
     case "menu":
       return (
         <svg {...common}>
@@ -203,7 +208,12 @@ export default function AppShell({ children, onLogout }) {
           </div>
         </div>
         {user ? (
-          <button className="icon-btn" aria-label="Logout" onClick={onLogout} title="Logout">
+          <button
+            className="icon-btn"
+            aria-label="Logout"
+            onClick={onLogout}
+            title="Logout"
+          >
             <Icon name="logout" />
           </button>
         ) : (
@@ -223,30 +233,94 @@ export default function AppShell({ children, onLogout }) {
 
         {isAdmin && (
           <>
-            <NavItem to="/home" label="Home" icon="home" onNavigate={onNavigate} />
-            <NavItem to="/courses/new" label="New Course" icon="plus" onNavigate={onNavigate} />
-            <NavItem to="/confirmation" label="Confirmation" icon="confirm" onNavigate={onNavigate} />
-            <NavItem to="/completed" label="Completed" icon="completed" onNavigate={onNavigate} />
-            <NavItem to="/unpaid" label="Unpaid" icon="money" onNavigate={onNavigate} />
-            <NavItem to="/users" label="Users" icon="users" onNavigate={onNavigate} />
-            <NavItem to="/reports" label="Reports" icon="reports" onNavigate={onNavigate} />
-
+            <NavItem
+              to="/home"
+              label="Home"
+              icon="home"
+              onNavigate={onNavigate}
+            />
+            <NavItem
+              to="/courses/new"
+              label="New Course"
+              icon="plus"
+              onNavigate={onNavigate}
+            />
+            <NavItem
+              to="/confirmation"
+              label="Confirmation"
+              icon="confirm"
+              onNavigate={onNavigate}
+            />
+            <NavItem
+              to="/completed"
+              label="Completed"
+              icon="completed"
+              onNavigate={onNavigate}
+            />
+            <NavItem
+              to="/unpaid"
+              label="Unpaid"
+              icon="money"
+              onNavigate={onNavigate}
+            />
+            <NavItem
+              to="/users"
+              label="Users"
+              icon="users"
+              onNavigate={onNavigate}
+            />
+            <NavItem
+              to="/reports"
+              label="Reports"
+              icon="reports"
+              onNavigate={onNavigate}
+            />
+            {/* NEW: Ratings page for admin */}
+            <NavItem
+              to="/ratings"
+              label="Ratings"
+              icon="star"
+              onNavigate={onNavigate}
+            />
           </>
         )}
 
         {/* Common (both roles) */}
-        <NavItem to="/" label="Pending" icon="pending" onNavigate={onNavigate} />
-        <NavItem to="/free-days" label="Free Days" icon="calendar" onNavigate={onNavigate} /> {/* <-- NEW */}
-        <NavItem to="/profile" label="Profile" icon="profile" onNavigate={onNavigate} />
-        <NavItem to="/password" label="Password" icon="lock" onNavigate={onNavigate} />
-
-        {/* Admin-only */}
-
+        <NavItem
+          to="/"
+          label="Pending"
+          icon="pending"
+          onNavigate={onNavigate}
+        />
+        <NavItem
+          to="/free-days"
+          label="Free Days"
+          icon="calendar"
+          onNavigate={onNavigate}
+        />
+        <NavItem
+          to="/profile"
+          label="Profile"
+          icon="profile"
+          onNavigate={onNavigate}
+        />
+        <NavItem
+          to="/password"
+          label="Password"
+          icon="lock"
+          onNavigate={onNavigate}
+        />
 
         {/* Footer for user + logout */}
         {user && (
           <div style={{ marginTop: "auto" }}>
-            <div style={{ padding: "12px 12px 6px", fontSize: 12, opacity: 0.8 }}>
+            <div
+              style={{
+                padding: "12px 12px 6px",
+                fontSize: 12,
+                opacity: 0.8,
+              }}
+            >
               Signed in as <b>{user.name || user.email}</b>
             </div>
             <LogoutItem />
