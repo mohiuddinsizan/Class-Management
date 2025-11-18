@@ -1,0 +1,30 @@
+.page-contact {
+  display: grid;
+  gap: var(--sp-8);
+}
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: var(--sp-6);
+  align-items: flex-start;
+}
+
+/* Left form card */
+.contact-form {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+/* Save button alignment */
+.contact-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--sp-2);
+}
+
+@media (max-width: 900px) {
+  .contact-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

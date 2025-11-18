@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 
-export default function Navbar({ user, onLogout }){
+export default function Navbar({ user, onLogout }) {
   const { pathname } = useLocation();
 
   const Tab = ({ to, children }) => (
@@ -22,10 +22,29 @@ export default function Navbar({ user, onLogout }){
   );
 
   return (
-    <header style={{ position: "sticky", top: 0, zIndex: 10, backdropFilter: "blur(10px)" }}>
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+        backdropFilter: "blur(10px)",
+      }}
+    >
       <div className="container row">
-        <Link to="/" className="h1" style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-          <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 20, background: "var(--accent)" }} />
+        <Link
+          to="/"
+          className="h1"
+          style={{ display: "inline-flex", gap: 8, alignItems: "center" }}
+        >
+          <span
+            style={{
+              display: "inline-block",
+              width: 10,
+              height: 10,
+              borderRadius: 20,
+              background: "var(--accent)",
+            }}
+          />
           Class<span style={{ color: "var(--primary)" }}>Manage</span>
         </Link>
 
@@ -35,8 +54,11 @@ export default function Navbar({ user, onLogout }){
               <Tab to="/home">Home</Tab>
               <Tab to="/pending">Pending</Tab>
 
-              {/* NEW: Free Days for both admin and teacher */}
+              {/* Free Days for both admin and teacher */}
               <Tab to="/free-days">Free Days</Tab>
+
+              {/* Contact directory for everyone */}
+              <Tab to="/contacts">Contact</Tab>
 
               {user.role === "admin" && (
                 <>
@@ -45,7 +67,7 @@ export default function Navbar({ user, onLogout }){
                   <Tab to="/unpaid">Unpaid</Tab>
                   <Tab to="/users">Users</Tab>
                   <Tab to="/reports">Reports</Tab>
-                  {/* NEW: Ratings tab for admin only */}
+                  {/* Ratings tab for admin only */}
                   <Tab to="/ratings">Ratings</Tab>
                 </>
               )}
@@ -56,7 +78,9 @@ export default function Navbar({ user, onLogout }){
               <div className="badge">
                 {user.name} · {user.role} · TPIN {user.tpin}
               </div>
-              <button className="btn-ghost" onClick={onLogout}>Logout</button>
+              <button className="btn-ghost" onClick={onLogout}>
+                Logout
+              </button>
             </div>
           </>
         )}

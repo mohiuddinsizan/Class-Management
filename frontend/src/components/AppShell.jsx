@@ -108,7 +108,7 @@ function Icon({ name, size = 18 }) {
           <line x1="16" y1="17" x2="16" y2="13" />
         </svg>
       );
-    case "star": // NEW: Ratings icon
+    case "star": // Ratings icon
       return (
         <svg {...common}>
           <polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" />
@@ -118,6 +118,17 @@ function Icon({ name, size = 18 }) {
       return (
         <svg {...common}>
           <path d="M3 6h18M3 12h18M3 18h18" />
+        </svg>
+      );
+    case "contact": // NEW: Contact directory icon (phone book)
+      return (
+        <svg {...common}>
+          <rect x="5" y="3" width="14" height="18" rx="2" />
+          <path d="M9 8a3 3 0 1 1 6 0v1a3 3 0 0 1-6 0Z" />
+          <path d="M9 17a5 5 0 0 1 6 0" />
+          <line x1="3" y1="7" x2="5" y2="7" />
+          <line x1="3" y1="12" x2="5" y2="12" />
+          <line x1="3" y1="17" x2="5" y2="17" />
         </svg>
       );
     default:
@@ -275,7 +286,7 @@ export default function AppShell({ children, onLogout }) {
               icon="reports"
               onNavigate={onNavigate}
             />
-            {/* NEW: Ratings page for admin */}
+            {/* Ratings page for admin */}
             <NavItem
               to="/ratings"
               label="Ratings"
@@ -296,6 +307,12 @@ export default function AppShell({ children, onLogout }) {
           to="/free-days"
           label="Free Days"
           icon="calendar"
+          onNavigate={onNavigate}
+        />
+        <NavItem
+          to="/contacts"
+          label="Contact"
+          icon="contact"
           onNavigate={onNavigate}
         />
         <NavItem

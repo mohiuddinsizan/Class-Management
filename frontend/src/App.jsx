@@ -18,7 +18,8 @@ import Reports from "./pages/Reports";
 import Password from "./pages/Password";
 import CourseCreate from "./pages/CourseCreate";
 import FreeDays from "./pages/FreeDays";
-import AdminRatings from "./pages/AdminRating"; // <-- NEW
+import AdminRatings from "./pages/AdminRating"; // <-- Ratings
+import Contact from "./pages/Contact";          // <-- NEW: Contact directory
 
 // Redirect to /login when unauthenticated, preserving intended route
 function RequireAuth({ children }) {
@@ -154,7 +155,18 @@ export default function App() {
                     </Protected>
                   }
                 />
-                {/* NEW: Ratings page for admin only */}
+
+                {/* NEW: Contact directory visible to all logged-in users */}
+                <Route
+                  path="/contacts"
+                  element={
+                    <Protected roles={["admin", "teacher"]}>
+                      <Contact />
+                    </Protected>
+                  }
+                />
+
+                {/* Ratings page for admin only */}
                 <Route
                   path="/ratings"
                   element={
@@ -163,6 +175,7 @@ export default function App() {
                     </Protected>
                   }
                 />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AppShell>
