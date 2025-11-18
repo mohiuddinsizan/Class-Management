@@ -78,7 +78,7 @@ export default function Users(){
   return (
     <div className="page page-users">
       <PageHeader
-        icon="/bigbang.svg"
+        // icon="/bigbang.svg"
         title="Users"
         meta={<div className="badge">Total: {users.length}</div>}
       />

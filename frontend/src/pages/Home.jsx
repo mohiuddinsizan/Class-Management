@@ -117,7 +117,7 @@ export default function Home(){
   return (
     <div className="page page-home">
       <PageHeader
-        icon="/bigbang.svg"
+        // icon="/bigbang.svg"
         title="Courses"
         meta={<div className="badge">{view === "archived" ? "Archived" : "Active"}: {courses.length}</div>}
         actions={

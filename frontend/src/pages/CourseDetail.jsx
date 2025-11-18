@@ -202,7 +202,7 @@ export default function CourseDetail(){
   return (
     <>
       <PageHeader
-        icon="/bigbang.svg"
+        // icon="/bigbang.svg"
         title={course?.name || "Course"}
         meta={
           <div className="row">

@@ -64,7 +64,7 @@ export default function Confirmation(){
   return (
     <div className="page page-confirmation">
       <PageHeader
-        icon="/bigbang.svg"
+        // icon="/bigbang.svg"
         title="Confirmation Queue"
         meta={<div className="badge">Waiting: {rows.length}</div>}
         actions={rows.length > 0 ? <Button onClick={confirmAll} disabled={loading}>Confirm All</Button> : null}

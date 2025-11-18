@@ -115,7 +115,7 @@ export default function FreeDays() {
   return (
     <div className="page page-free-days">
       <PageHeader
-        icon="/bigbang.svg"
+        // icon="/bigbang.svg"
         title="Free Days"
         description={
           isAdmin

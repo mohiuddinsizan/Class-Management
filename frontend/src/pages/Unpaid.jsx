@@ -66,7 +66,7 @@ export default function Unpaid(){
   return (
     <div className="page page-unpaid">
       <PageHeader
-        icon="/bigbang.svg"
+        // icon="/bigbang.svg"
         title="Unpaid"
         meta={<div className="badge">Items: {rows.length}</div>}
         actions={rows.length > 0 ? <Button onClick={confirmAll} disabled={loading}>Confirm All Paid</Button> : null}

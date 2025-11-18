@@ -351,7 +351,7 @@ export default function Completed() {
   return (
     <div className="page page-completed">
       <PageHeader
-        icon="/bigbang.svg"
+        // icon="/bigbang.svg"
         title="Completed Classes"
         meta={<div className="badge">Total: {rows.length}</div>}
       />

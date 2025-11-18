@@ -66,7 +66,7 @@ export default function Pending(){
   return (
     <div className="page page-pending">
       <PageHeader
-        icon="/bigbang.svg"
+        // icon="/bigbang.svg"
         title="Pending Classes"
         meta={<div className="badge">Total: {rows.length}</div>}
       />
