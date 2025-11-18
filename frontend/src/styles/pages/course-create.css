@@ -17,7 +17,7 @@
   .course-create-form{ grid-template-columns: 1fr; }
 }
 
-/* ===== People chips ===== */
+/* ===== People chips (used on other pages like CourseDetail) ===== */
 .people-grid{
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -52,7 +52,6 @@
   .people-grid{ grid-template-columns: repeat(1, minmax(260px, 1fr)); }
 }
 
-
 /* Bring people chips in line with the form padding */
 .people-grid{
   gap: var(--sp-4);
@@ -66,4 +65,12 @@
 .form-grid .full .h3{
   margin-top: var(--sp-2);
   margin-bottom: var(--sp-2);
+}
+
+/* Actions row for forms on this page */
+.form-actions{
+  grid-column: 1 / -1;
+  display:flex;
+  justify-content:flex-end;
+  margin-top: var(--sp-3);
 }

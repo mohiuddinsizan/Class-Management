@@ -1,5 +1,23 @@
 /* src/styles/pages/confirmation.css */
-.page-confirmation{display:grid; gap: var(--s-8)}
-@media (max-width: 960px){
-  /* nothing special needed; wrapper ensures spacing on mobile too */
+
+.page-confirmation {
+  display: grid;
+  gap: var(--s-8);
+}
+
+/* IMPORTANT: do NOT override .page-header here
+   (remove any .page-header / .page-confirmation .page-header rules you had) */
+@media (max-width: 600px) {
+  .page-confirmation .page-header {
+    margin-bottom: var(--sp-3);      /* less bottom space */
+  }
+
+  .page-confirmation .ph-titles .h1 {
+    font-size: 18px;                 /* slightly smaller title */
+    line-height: 1.2;
+  }
+
+  .page-confirmation .ph-meta {
+    font-size: 11px;
+  }
 }
