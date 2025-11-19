@@ -1,3 +1,34 @@
-.page-users{display:grid; gap: var(--s-8)}
-.users-grid{display:grid; grid-template-columns: 1fr 1fr; gap: var(--s-8)}
-@media (max-width: 960px){ .users-grid{grid-template-columns: 1fr} }
+/* src/styles/pages/users.css */
+
+.page-users{
+  display:grid;
+  gap: var(--s-8);
+}
+
+/* Two-column layout on desktop */
+.users-grid{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-8);
+  align-items: flex-start; /* keep left card at natural height */
+}
+
+/* Make the right-hand section (All Users) scrollable so it doesn't stretch the page */
+.users-grid > :nth-child(2){
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding-right: 4px; /* space for scrollbar */
+}
+
+/* Mobile: stack, and let it flow normally */
+@media (max-width: 960px){
+  .users-grid{
+    grid-template-columns: 1fr;
+  }
+
+  .users-grid > :nth-child(2){
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+  }
+}
