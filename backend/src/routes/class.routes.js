@@ -1,8 +1,10 @@
+// routes/class.routes.js
 import { Router } from "express";
 import { auth, isAdmin, isTeacherOrAdmin } from "../middleware/auth.js";
 import { ClassSession } from "../models/ClassSession.js";
 import { Course } from "../models/Course.js";
 import { User } from "../models/User.js";
+import { UploadedVideo } from "../models/UploadedVideo.js";
 
 const router = Router();
 
@@ -10,7 +12,13 @@ const router = Router();
 // Admin only; assignee can be teacher OR admin (admins can teach)
 router.post("/assign", auth, isAdmin, async (req, res, next) => {
   try {
-    const { courseId, teacherId, name, hours = 1.5, hourlyRate = 600 } = req.body || {};
+    const {
+      courseId,
+      teacherId,
+      name,
+      hours = 1.5,
+      hourlyRate = 600,
+    } = req.body || {};
     if (!name || !String(name).trim()) {
       return res.status(400).json({ error: "Class name is required" });
     }
@@ -18,8 +26,10 @@ router.post("/assign", auth, isAdmin, async (req, res, next) => {
     const course = await Course.findById(courseId);
     const teacher = await User.findById(teacherId);
     if (!course) return res.status(400).json({ error: "Invalid course" });
-    if (!teacher || !["teacher","admin"].includes(teacher.role)) {
-      return res.status(400).json({ error: "Invalid assignee (must be teacher or admin)" });
+    if (!teacher || !["teacher", "admin"].includes(teacher.role)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid assignee (must be teacher or admin)" });
     }
 
     const created = await ClassSession.create({
@@ -38,7 +48,11 @@ router.post("/assign", auth, isAdmin, async (req, res, next) => {
   } catch (e) {
     // Handle duplicate {course, name} nicely
     if (e?.code === 11000) {
-      return res.status(409).json({ error: "A class with this name already exists for this course" });
+      return res
+        .status(409)
+        .json({
+          error: "A class with this name already exists for this course",
+        });
     }
     next(e);
   }
@@ -58,7 +72,9 @@ router.get("/pending", auth, isTeacherOrAdmin, async (req, res, next) => {
 
     // rows already include .name (session name)
     res.json(rows);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 /* --------------------------- MARK COMPLETE -------------------------- */
@@ -67,7 +83,9 @@ router.patch("/:id/complete", auth, isTeacherOrAdmin, async (req, res, next) => 
   try {
     const cls = await ClassSession.findById(req.params.id);
     if (!cls) return res.status(404).json({ error: "Not found" });
-    if (cls.status !== "pending") return res.status(400).json({ error: "Not pending" });
+    if (cls.status !== "pending") {
+      return res.status(400).json({ error: "Not pending" });
+    }
 
     const isOwner = String(cls.teacher) === String(req.user.id);
     if (req.user.role === "teacher" && !isOwner) {
@@ -78,7 +96,9 @@ router.patch("/:id/complete", auth, isTeacherOrAdmin, async (req, res, next) => 
     cls.completedAt = new Date();
     await cls.save();
     res.json(cls);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 /* ------------------------- CONFIRMATION QUEUE ----------------------- */
@@ -90,20 +110,41 @@ router.get("/confirmation", auth, isAdmin, async (_req, res, next) => {
       .populate("teacher", "name tpin")
       .lean();
     res.json(rows);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
+/* ---------------------------- CONFIRM CLASS ------------------------- */
+// Admin confirms teacherCompleted -> adminConfirmed
+// Also creates/updates UploadedVideo so editor sees it in /upload/pending
 router.patch("/:id/confirm", auth, isAdmin, async (req, res, next) => {
   try {
     const cls = await ClassSession.findById(req.params.id);
     if (!cls) return res.status(404).json({ error: "Not found" });
-    if (cls.status !== "teacherCompleted") return res.status(400).json({ error: "Not in confirmation queue" });
+    if (cls.status !== "teacherCompleted") {
+      return res.status(400).json({ error: "Not in confirmation queue" });
+    }
 
     cls.status = "adminConfirmed";
     cls.confirmedAt = new Date();
     await cls.save();
+
+    // 🔵 IMPORTANT: create or reuse an upload task for this session
+    await UploadedVideo.findOneAndUpdate(
+      { classSession: cls._id },
+      {
+        classSession: cls._id,
+        // we don't know the editor yet; will be set when someone marks uploaded
+        uploaded: false,
+      },
+      { upsert: true, new: true }
+    );
+
     res.json(cls);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 /* ------------------------------ COMPLETED -------------------------- */
@@ -121,7 +162,7 @@ router.get("/completed", auth, isAdmin, async (req, res, next) => {
       if (start) filter.confirmedAt.$gte = new Date(start);
       if (end) {
         const d = new Date(end);
-        d.setHours(23,59,59,999); // include entire end date
+        d.setHours(23, 59, 59, 999); // include entire end date
         filter.confirmedAt.$lte = d;
       }
     }
@@ -131,7 +172,9 @@ router.get("/completed", auth, isAdmin, async (req, res, next) => {
       .populate("teacher", "name tpin")
       .lean();
     res.json(rows);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 /* ------------------------------- UNPAID ----------------------------- */
@@ -140,13 +183,15 @@ router.get("/unpaid", auth, isAdmin, async (_req, res, next) => {
   try {
     const rows = await ClassSession.find({
       status: "adminConfirmed",
-      paid: { $ne: true }
+      paid: { $ne: true },
     })
       .populate("course", "name")
       .populate("teacher", "name tpin")
       .lean();
     res.json(rows);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.patch("/:id/paid", auth, isAdmin, async (req, res, next) => {
@@ -157,7 +202,9 @@ router.patch("/:id/paid", auth, isAdmin, async (req, res, next) => {
     cls.paidAt = new Date();
     await cls.save();
     res.json(cls);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // (Optional) keep the toggle endpoint for other admin views if needed,
@@ -170,7 +217,9 @@ router.patch("/:id/unpaid", auth, isAdmin, async (req, res, next) => {
     cls.paidAt = undefined;
     await cls.save();
     res.json(cls);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // Bulk confirm all unpaid -> paid
@@ -181,7 +230,9 @@ router.post("/unpaid/confirm-all", auth, isAdmin, async (_req, res, next) => {
       { $set: { paid: true, paidAt: new Date() } }
     );
     res.json({ modified: result.modifiedCount });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 /* -------------------------- DELETE PENDING -------------------------- */
@@ -190,10 +241,16 @@ router.delete("/:id", auth, isAdmin, async (req, res, next) => {
   try {
     const cls = await ClassSession.findById(req.params.id);
     if (!cls) return res.status(404).json({ error: "Not found" });
-    if (cls.status !== "pending") return res.status(400).json({ error: "Only pending can be deleted" });
+    if (cls.status !== "pending") {
+      return res
+        .status(400)
+        .json({ error: "Only pending can be deleted" });
+    }
     await cls.deleteOne();
     res.json({ ok: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

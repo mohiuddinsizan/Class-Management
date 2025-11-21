@@ -23,63 +23,16 @@ export default function Completed() {
     courseId: "",
     teacherId: "",
     tpin: "",
-    start: today,   // default: today
-    end: today      // default: today
+    start: today, // default: today
+    end: today, // default: today
   });
 
-  const loadRows = async (q = {}) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams(
-        Object.entries(q).filter(([_, v]) => v)
-      );
-      const r = await api.get(`/classes/completed?${params.toString()}`);
-      setRows(r.data || []);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetFilters = () => {
-    const base = {
-      courseId: "",
-      teacherId: "",
-      tpin: "",
-      start: today,  // reset back to today
-      end: today
-    };
-    setFilters(base);
-    loadRows(base);  // only today's completed classes
-  };
-
-  useEffect(() => {
-    api.get("/courses?status=active").then((r) => setCourses(r.data || []));
-    Promise.all([
-      api.get("/users", { params: { role: "teacher" } }),
-      api.get("/users", { params: { role: "admin" } }),
-    ])
-      .then(([t, a]) => setPeople([...(t.data || []), ...(a.data || [])]))
-      .catch(() => setPeople([]));
-
-    // initial load: ONLY today's completed classes
-    loadRows({ start: today, end: today });
-  }, []);
-
-  const columns = [
-    { key: "name", label: "Class" },
-    { key: "course", label: "Course" },
-    { key: "teacherName", label: "Teacher" },
-    { key: "teacherTpin", label: "TPIN" },
-    { key: "hours", label: "Hours" },
-    { key: "hourlyRate", label: "Rate/hr" },
-
-    // NEW date columns
-    { key: "completedAt", label: "Completed" },
-    { key: "confirmedAt", label: "Confirmed" },
-    { key: "paidAt", label: "Paid On" },
-
-    { key: "paid", label: "Paid?" },
-  ];
+  const user = useMemo(
+    () => JSON.parse(localStorage.getItem("user") || "null"),
+    []
+  );
+  const isAdmin = user?.role === "admin";
+  const isEditor = user?.role === "editor";
 
   /* ----------------------------- helpers ----------------------------- */
   const fmtDate = (d) => {
@@ -100,20 +53,9 @@ export default function Completed() {
   };
 
   const money = (n) =>
-    Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0 });
-
-  // If Start == End → that day; else if only Start → that day; else default today
-  const billDay = useMemo(() => {
-    if (filters.start && filters.end && filters.start === filters.end)
-      return filters.start;
-    if (filters.start && !filters.end) return filters.start;
-    return today;
-  }, [filters.start, filters.end]);
-
-  const rowsForBill = useMemo(() => {
-    const day = billDay;
-    return rows.filter((r) => onlyDate(r.confirmedAt) === day);
-  }, [rows, billDay]);
+    Number(n || 0).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+    });
 
   const escapeHtml = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (m) => (
@@ -126,7 +68,49 @@ export default function Completed() {
       }[m]
     ));
 
-  /* ------------------------ mark paid + download ----------------------- */
+  /* ----------------------------- ADMIN LOGIC ----------------------------- */
+
+  const loadRows = async (q = {}) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams(
+        Object.entries(q).filter(([_, v]) => v)
+      );
+      const r = await api.get(`/classes/completed?${params.toString()}`);
+      setRows(r.data || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetFilters = () => {
+    const base = {
+      courseId: "",
+      teacherId: "",
+      tpin: "",
+      start: today, // reset back to today
+      end: today,
+    };
+    setFilters(base);
+    if (isAdmin) {
+      // only admin uses server filters
+      loadRows(base); // only today's completed classes
+    }
+  };
+
+  // If Start == End → that day; else if only Start → that day; else default today
+  const billDay = useMemo(() => {
+    if (filters.start && filters.end && filters.start === filters.end)
+      return filters.start;
+    if (filters.start && !filters.end) return filters.start;
+    return today;
+  }, [filters.start, filters.end]);
+
+  const rowsForBill = useMemo(() => {
+    if (!isAdmin) return [];
+    const day = billDay;
+    return rows.filter((r) => onlyDate(r.confirmedAt) === day);
+  }, [rows, billDay, isAdmin]);
 
   // Try bulk; else patch individually (like Unpaid.jsx)
   const markBillAsPaid = async (ids) => {
@@ -329,144 +313,352 @@ export default function Completed() {
     }
   };
 
-  /* ----------------------------- UI ----------------------------- */
-const Actions = ({ className }) => (
-  <div className={`filters-actions ${className || ""}`}>
-    <Button
-      variant="ghost"
-      onClick={resetFilters}
-      disabled={loading || downloading}
-      style={{ marginRight: 8 }}   // 👈 spacing
-    >
-      Reset
-    </Button>
-    <Button
-      variant="ghost"
-      onClick={() => loadRows(filters)}
-      disabled={loading || downloading}
-      style={{ marginRight: 8 }}   // 👈 spacing
-    >
-      Apply Filters
-    </Button>
-    <Button
-      onClick={onDownloadBill}
-      disabled={loading || downloading || rowsForBill.length === 0}
-    >
-      {downloading ? "Processing…" : "Mark Paid & Download Bill (PDF)"}
-    </Button>
-  </div>
-);
+  /* ----------------------------- EDITOR LOGIC ----------------------------- */
 
+  const loadEditorUploaded = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/upload/uploaded");
+      // you can filter per-editor if you assign editor field properly
+      setRows(data || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // filter editor rows by date range using uploadedAt
+  const filteredEditorRows = useMemo(() => {
+    if (!isEditor) return [];
+    const { start, end } = filters;
+    return (rows || []).filter((row) => {
+      const d = onlyDate(row.uploadedAt);
+      if (!d) return false;
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }, [rows, filters, isEditor]);
+
+  /* ----------------------------- EFFECTS ----------------------------- */
+
+  useEffect(() => {
+    if (isAdmin) {
+      // Admin: existing behavior
+      api
+        .get("/courses?status=active")
+        .then((r) => setCourses(r.data || []));
+      Promise.all([
+        api.get("/users", { params: { role: "teacher" } }),
+        api.get("/users", { params: { role: "admin" } }),
+      ])
+        .then(([t, a]) =>
+          setPeople([...(t.data || []), ...(a.data || [])])
+        )
+        .catch(() => setPeople([]));
+
+      // initial load: ONLY today's completed classes
+      loadRows({ start: today, end: today });
+    } else if (isEditor) {
+      // Editor: load all uploaded, then we filter by date in UI
+      loadEditorUploaded();
+    }
+  }, [isAdmin, isEditor]);
+
+  /* ----------------------------- COLUMNS ----------------------------- */
+
+  // Admin columns (existing)
+  const columnsAdmin = [
+    { key: "name", label: "Class" },
+    { key: "course", label: "Course" },
+    { key: "teacherName", label: "Teacher" },
+    { key: "teacherTpin", label: "TPIN" },
+    { key: "hours", label: "Hours" },
+    { key: "hourlyRate", label: "Rate/hr" },
+
+    { key: "completedAt", label: "Completed" },
+    { key: "confirmedAt", label: "Confirmed" },
+    { key: "paidAt", label: "Paid On" },
+
+    { key: "paid", label: "Paid?" },
+  ];
+
+  // Editor columns: uploaded videos
+  const columnsEditor = [
+    { key: "className", label: "Class" },
+    { key: "course", label: "Course" },
+    { key: "teacherName", label: "Teacher" },
+    { key: "teacherTpin", label: "TPIN" },
+    { key: "videoUrl", label: "Video Link" },
+    { key: "uploadedAt", label: "Uploaded At" },
+  ];
+
+  const ActionsAdmin = ({ className }) => (
+    <div className={`filters-actions ${className || ""}`}>
+      <Button
+        variant="ghost"
+        onClick={resetFilters}
+        disabled={loading || downloading}
+        style={{ marginRight: 8 }}
+      >
+        Reset
+      </Button>
+      <Button
+        variant="ghost"
+        onClick={() => loadRows(filters)}
+        disabled={loading || downloading}
+        style={{ marginRight: 8 }}
+      >
+        Apply Filters
+      </Button>
+      <Button
+        onClick={onDownloadBill}
+        disabled={loading || downloading || rowsForBill.length === 0}
+      >
+        {downloading ? "Processing…" : "Mark Paid & Download Bill (PDF)"}
+      </Button>
+    </div>
+  );
+
+  // For editor, only date filters (no buttons needed, but we keep Reset for UX)
+  const EditorToolbar = () => (
+    <Toolbar>
+      <div className="filters-grid">
+        <Field label="Start">
+          <input
+            type="date"
+            value={filters.start}
+            onChange={(e) =>
+              setFilters((s) => ({ ...s, start: e.target.value }))
+            }
+          />
+        </Field>
+        <Field label="End">
+          <input
+            type="date"
+            value={filters.end}
+            onChange={(e) =>
+              setFilters((s) => ({ ...s, end: e.target.value }))
+            }
+          />
+        </Field>
+        <div style={{ alignSelf: "flex-end" }}>
+          <Button
+            variant="ghost"
+            onClick={resetFilters}
+            disabled={loading}
+          >
+            Today Only
+          </Button>
+        </div>
+      </div>
+    </Toolbar>
+  );
+
+  const title = isEditor ? "Uploaded Videos" : "Completed Classes";
+
+  /* ----------------------------- RENDER ----------------------------- */
 
   return (
     <div className="page page-completed">
       <PageHeader
         // icon="/bigbang.svg"
-        title="Completed Classes"
-        meta={<div className="badge">Total: {rows.length}</div>}
+        title={title}
+        meta={
+          <div className="badge">
+            Total: {isEditor ? filteredEditorRows.length : rows.length}
+          </div>
+        }
       />
 
-      {/* Toolbar: left = filters grid, right = desktop actions */}
-      <Toolbar right={<Actions className="desktop" />}>
-        <div className="filters-grid">
-          <Field label="Course">
-            <select
-              value={filters.courseId}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, courseId: e.target.value }))
-              }
-            >
-              <option value="">All</option>
-              {courses.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Field>
+      {/* EDITOR VIEW */}
+      {isEditor && (
+        <>
+          <EditorToolbar />
+          <Section>
+            {filteredEditorRows.length === 0 ? (
+              <Empty
+                icon="🎬"
+                title={
+                  loading
+                    ? "Loading..."
+                    : "No uploaded videos for selected date(s)"
+                }
+              />
+            ) : (
+              <Table
+                columns={columnsEditor}
+                rows={filteredEditorRows}
+                renderCell={(c, row) => {
+                  // row = UploadedVideo
+                  const session = row.classSession || {};
+                  if (c.key === "className")
+                    return session.name || (
+                      <span className="subtle">—</span>
+                    );
+                  if (c.key === "course")
+                    return session.course?.name || "-";
+                  if (c.key === "teacherName")
+                    return session.teacher?.name || "-";
+                  if (c.key === "teacherTpin")
+                    return session.teacher?.tpin || "-";
+                  if (c.key === "videoUrl") {
+                    if (!row.videoUrl)
+                      return (
+                        <span className="subtle">No link</span>
+                      );
+                    return (
+                      <a
+                        href={row.videoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {row.videoUrl}
+                      </a>
+                    );
+                  }
+                  if (c.key === "uploadedAt")
+                    return fmtDate(row.uploadedAt);
+                  return null;
+                }}
+              />
+            )}
+          </Section>
+        </>
+      )}
 
-          <Field label="Teacher/Admin">
-            <select
-              value={filters.teacherId}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, teacherId: e.target.value }))
-              }
-            >
-              <option value="">All</option>
-              {people.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.name} ({p.role})
-                </option>
-              ))}
-            </select>
-          </Field>
+      {/* ADMIN VIEW (UNCHANGED BEHAVIOR) */}
+      {isAdmin && (
+        <>
+          {/* Toolbar: left = filters grid, right = desktop actions */}
+          <Toolbar right={<ActionsAdmin className="desktop" />}>
+            <div className="filters-grid">
+              <Field label="Course">
+                <select
+                  value={filters.courseId}
+                  onChange={(e) =>
+                    setFilters((s) => ({
+                      ...s,
+                      courseId: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All</option>
+                  {courses.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
-          <Field label="TPIN">
-            <input
-              value={filters.tpin}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, tpin: e.target.value }))
-              }
-              placeholder="Optional"
-            />
-          </Field>
+              <Field label="Teacher/Admin">
+                <select
+                  value={filters.teacherId}
+                  onChange={(e) =>
+                    setFilters((s) => ({
+                      ...s,
+                      teacherId: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All</option>
+                  {people.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.name} ({p.role})
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
-          <Field label="Start">
-            <input
-              type="date"
-              value={filters.start}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, start: e.target.value }))
-              }
-            />
-          </Field>
+              <Field label="TPIN">
+                <input
+                  value={filters.tpin}
+                  onChange={(e) =>
+                    setFilters((s) => ({
+                      ...s,
+                      tpin: e.target.value,
+                    }))
+                  }
+                  placeholder="Optional"
+                />
+              </Field>
 
-          <Field label="End">
-            <input
-              type="date"
-              value={filters.end}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, end: e.target.value }))
-              }
-            />
-          </Field>
-        </div>
+              <Field label="Start">
+                <input
+                  type="date"
+                  value={filters.start}
+                  onChange={(e) =>
+                    setFilters((s) => ({
+                      ...s,
+                      start: e.target.value,
+                    }))
+                  }
+                />
+              </Field>
 
-        {/* Mobile actions appear BELOW the filters on small screens */}
-        <Actions className="mobile" />
-      </Toolbar>
+              <Field label="End">
+                <input
+                  type="date"
+                  value={filters.end}
+                  onChange={(e) =>
+                    setFilters((s) => ({
+                      ...s,
+                      end: e.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
 
-      <Section>
-        {rows.length === 0 ? (
-          <Empty
-            icon="📗"
-            title={loading ? "Loading..." : "No completed classes for filters"}
-          />
-        ) : (
-          <Table
-            columns={columns}
-            rows={rows}
-            renderCell={(c, row) => {
-              if (c.key === "course") return row.course?.name || "-";
-              if (c.key === "name")
-                return row.name || <span className="subtle">—</span>;
+            {/* Mobile actions appear BELOW the filters on small screens */}
+            <ActionsAdmin className="mobile" />
+          </Toolbar>
 
-              if (c.key === "completedAt") return fmtDate(row.completedAt);
-              if (c.key === "confirmedAt") return fmtDate(row.confirmedAt);
-              if (c.key === "paidAt") return fmtDate(row.paidAt);
+          <Section>
+            {rows.length === 0 ? (
+              <Empty
+                icon="📗"
+                title={
+                  loading
+                    ? "Loading..."
+                    : "No completed classes for filters"
+                }
+              />
+            ) : (
+              <Table
+                columns={columnsAdmin}
+                rows={rows}
+                renderCell={(c, row) => {
+                  if (c.key === "course")
+                    return row.course?.name || "-";
+                  if (c.key === "name")
+                    return (
+                      row.name || (
+                        <span className="subtle">—</span>
+                      )
+                    );
 
-              if (c.key === "paid")
-                return row.paid ? (
-                  <span className="badge ok">Paid</span>
-                ) : (
-                  <span className="badge warn">Unpaid</span>
-                );
+                  if (c.key === "completedAt")
+                    return fmtDate(row.completedAt);
+                  if (c.key === "confirmedAt")
+                    return fmtDate(row.confirmedAt);
+                  if (c.key === "paidAt")
+                    return fmtDate(row.paidAt);
 
-              return row[c.key];
-            }}
-          />
-        )}
-      </Section>
+                  if (c.key === "paid")
+                    return row.paid ? (
+                      <span className="badge ok">Paid</span>
+                    ) : (
+                      <span className="badge warn">Unpaid</span>
+                    );
+
+                  return row[c.key];
+                }}
+              />
+            )}
+          </Section>
+        </>
+      )}
     </div>
   );
 }

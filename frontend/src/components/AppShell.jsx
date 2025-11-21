@@ -157,6 +157,7 @@ function NavItem({ to, label, icon, onNavigate }) {
 export default function AppShell({ children, onLogout }) {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const isAdmin = user?.role === "admin";
+  const isEditor = user?.role === "editor";
   const [open, setOpen] = useState(false);
 
   // Close drawer with ESC
@@ -296,7 +297,17 @@ export default function AppShell({ children, onLogout }) {
           </>
         )}
 
-        {/* Common (both roles) */}
+        {/* Editor-specific: show Completed (uploaded videos) */}
+        {isEditor && (
+          <NavItem
+            to="/completed"
+            label="Completed"
+            icon="completed"
+            onNavigate={onNavigate}
+          />
+        )}
+
+        {/* Common (all roles) */}
         <NavItem
           to="/"
           label="Pending"

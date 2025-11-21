@@ -21,6 +21,9 @@ export default function Navbar({ user, onLogout }) {
     </Link>
   );
 
+  const isAdmin = user?.role === "admin";
+  const isEditor = user?.role === "editor";
+
   return (
     <header
       style={{
@@ -51,16 +54,20 @@ export default function Navbar({ user, onLogout }) {
         {user && (
           <>
             <nav className="row" style={{ gap: 10 }}>
+              {/* Home: keep as before (admin/teacher UX thing in App.jsx) */}
               <Tab to="/home">Home</Tab>
+
+              {/* Pending for everyone (behavior differs per role in Pending.jsx) */}
               <Tab to="/pending">Pending</Tab>
 
-              {/* Free Days for both admin and teacher */}
+              {/* Free Days for everyone (admin, teacher, editor) */}
               <Tab to="/free-days">Free Days</Tab>
 
               {/* Contact directory for everyone */}
               <Tab to="/contacts">Contact</Tab>
 
-              {user.role === "admin" && (
+              {/* Admin-only block */}
+              {isAdmin && (
                 <>
                   <Tab to="/confirmation">Confirm</Tab>
                   <Tab to="/completed">Completed</Tab>
@@ -71,6 +78,12 @@ export default function Navbar({ user, onLogout }) {
                   <Tab to="/ratings">Ratings</Tab>
                 </>
               )}
+
+              {/* Editor can also see Completed (uploaded videos view) */}
+              {isEditor && (
+                <Tab to="/completed">Completed</Tab>
+              )}
+
               <Tab to="/profile">Profile</Tab>
             </nav>
 

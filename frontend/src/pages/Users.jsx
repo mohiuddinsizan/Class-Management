@@ -9,95 +9,128 @@ import { Field } from "../components/Field";
 import Empty from "../components/Empty";
 import "../styles/pages/users.css";
 
-export default function Users(){
+export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
   const [form, setForm] = useState({
-    name:"", tpin:"", role:"teacher", password:"", confirmPassword:""
+    name: "",
+    tpin: "",
+    role: "teacher",
+    password: "",
+    confirmPassword: "",
   });
 
   const [q, setQ] = useState("");           // search query
   const [role, setRole] = useState("all");  // list filter
 
-  const load = async ()=>{
+  const load = async () => {
     setLoading(true);
-    setErr(""); setMsg("");
-    try{
+    setErr("");
+    setMsg("");
+    try {
       const { data } = await api.get("/users");
-      // Stable sort: admins first, then teachers; then name
-      const sorted = [...(data||[])].sort((a,b)=>{
-        const rank = (r)=> r==="admin" ? 0 : 1;
+      // Stable sort: admins first, then teachers, then editors; then name
+      const sorted = [...(data || [])].sort((a, b) => {
+        const rank = (r) => {
+          if (r === "admin") return 0;
+          if (r === "teacher") return 1;
+          if (r === "editor") return 2;
+          return 3;
+        };
         if (rank(a.role) !== rank(b.role)) return rank(a.role) - rank(b.role);
-        return (a.name||"").localeCompare(b.name||"");
+        return (a.name || "").localeCompare(b.name || "");
       });
       setUsers(sorted);
-    }catch(ex){
+    } catch (ex) {
       setErr(ex?.response?.data?.error || "Failed to load users.");
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
 
-  useEffect(()=>{ load(); },[]);
+  useEffect(() => {
+    load();
+  }, []);
 
-  const canSubmit = useMemo(()=>{
+  const canSubmit = useMemo(() => {
     const okName = form.name.trim().length >= 2;
     const okTpin = !!form.tpin.trim();
-    const okPw = form.password.length >= 8 && form.password === form.confirmPassword;
+    const okPw =
+      form.password.length >= 8 &&
+      form.password === form.confirmPassword;
     return okName && okTpin && okPw && !loading;
-  },[form, loading]);
+  }, [form, loading]);
 
-  const submit = async (e)=>{
+  const submit = async (e) => {
     e.preventDefault();
-    setMsg(""); setErr("");
-    if(!canSubmit) return;
+    setMsg("");
+    setErr("");
+    if (!canSubmit) return;
     setLoading(true);
-    try{
+    try {
       await api.post("/users", form);
       setMsg("User created.");
-      setForm({ name:"", tpin:"", role:"teacher", password:"", confirmPassword:"" });
+      setForm({
+        name: "",
+        tpin: "",
+        role: "teacher",
+        password: "",
+        confirmPassword: "",
+      });
       await load();
-    }catch(ex){
+    } catch (ex) {
       setErr(ex?.response?.data?.error || "Failed to create user.");
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
 
   // list filtering
-  const filtered = users.filter(u => {
-    const roleOk = role==="all" ? true : u.role === role;
+  const filtered = users.filter((u) => {
+    const roleOk = role === "all" ? true : u.role === role;
     const text = [u.name, u.tpin, u.role].join(" ").toLowerCase();
-    const qok = q.trim() ? text.includes(q.trim().toLowerCase()) : true;
+    const qok = q.trim()
+      ? text.includes(q.trim().toLowerCase())
+      : true;
     return roleOk && qok;
   });
 
   return (
     <div className="page page-users">
       <PageHeader
-        // icon="/bigbang.svg"
         title="Users"
         meta={<div className="badge">Total: {users.length}</div>}
       />
 
       <div className="users-grid">
         {/* Create user */}
-        <Section title="Create User" description="Add an admin or a teacher">
-          <form onSubmit={submit} className="grid grid-2" style={{gap:16}}>
+        <Section
+          title="Create User"
+          description="Add an admin, teacher, or editor"
+        >
+          <form
+            onSubmit={submit}
+            className="grid grid-2"
+            style={{ gap: 16 }}
+          >
             <Field label="Name">
               <input
                 value={form.name}
-                onChange={e=>setForm(s=>({...s,name:e.target.value}))}
+                onChange={(e) =>
+                  setForm((s) => ({ ...s, name: e.target.value }))
+                }
                 placeholder="Full name"
               />
             </Field>
             <Field label="TPIN">
               <input
                 value={form.tpin}
-                onChange={e=>setForm(s=>({...s,tpin:e.target.value}))}
+                onChange={(e) =>
+                  setForm((s) => ({ ...s, tpin: e.target.value }))
+                }
                 placeholder="Unique ID"
               />
             </Field>
@@ -105,10 +138,13 @@ export default function Users(){
             <Field label="Role">
               <select
                 value={form.role}
-                onChange={e=>setForm(s=>({...s,role:e.target.value}))}
+                onChange={(e) =>
+                  setForm((s) => ({ ...s, role: e.target.value }))
+                }
               >
                 <option value="admin">admin</option>
                 <option value="teacher">teacher</option>
+                <option value="editor">editor</option>
               </select>
             </Field>
             <div />
@@ -117,7 +153,9 @@ export default function Users(){
               <input
                 type="password"
                 value={form.password}
-                onChange={e=>setForm(s=>({...s,password:e.target.value}))}
+                onChange={(e) =>
+                  setForm((s) => ({ ...s, password: e.target.value }))
+                }
                 placeholder="At least 8 characters"
               />
             </Field>
@@ -125,7 +163,12 @@ export default function Users(){
               <input
                 type="password"
                 value={form.confirmPassword}
-                onChange={e=>setForm(s=>({...s,confirmPassword:e.target.value}))}
+                onChange={(e) =>
+                  setForm((s) => ({
+                    ...s,
+                    confirmPassword: e.target.value,
+                  }))
+                }
                 placeholder="Repeat password"
               />
             </Field>
@@ -135,35 +178,59 @@ export default function Users(){
               {loading ? "Creating…" : "Create"}
             </Button>
 
-            {err && <div className="badge err" style={{gridColumn:"1 / -1"}}>{err}</div>}
-            {msg && <div className="badge ok" style={{gridColumn:"1 / -1"}}>{msg}</div>}
+            {err && (
+              <div
+                className="badge err"
+                style={{ gridColumn: "1 / -1" }}
+              >
+                {err}
+              </div>
+            )}
+            {msg && (
+              <div
+                className="badge ok"
+                style={{ gridColumn: "1 / -1" }}
+              >
+                {msg}
+              </div>
+            )}
           </form>
         </Section>
 
         {/* List users */}
-        <Section title="All Users" actions={
-          <div className="row" style={{gap:8}}>
-            <input
-              placeholder="Search name/TPIN/role"
-              value={q}
-              onChange={e=>setQ(e.target.value)}
-              style={{minWidth:220}}
+        <Section
+          title="All Users"
+          actions={
+            <div className="row" style={{ gap: 8 }}>
+              <input
+                placeholder="Search name/TPIN/role"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                style={{ minWidth: 220 }}
+              />
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="all">All</option>
+                <option value="admin">Admins</option>
+                <option value="teacher">Teachers</option>
+                <option value="editor">Editors</option>
+              </select>
+            </div>
+          }
+        >
+          {filtered.length === 0 ? (
+            <Empty
+              icon="👥"
+              title={loading ? "Loading..." : "No users found"}
             />
-            <select value={role} onChange={e=>setRole(e.target.value)}>
-              <option value="all">All</option>
-              <option value="admin">Admins</option>
-              <option value="teacher">Teachers</option>
-            </select>
-          </div>
-        }>
-          {filtered.length===0 ? (
-            <Empty icon="👥" title={loading ? "Loading..." : "No users found"} />
           ) : (
             <Table
               columns={[
-                {key:"name", label:"Name"},
-                {key:"tpin", label:"TPIN"},
-                {key:"role", label:"Role"},
+                { key: "name", label: "Name" },
+                { key: "tpin", label: "TPIN" },
+                { key: "role", label: "Role" },
               ]}
               rows={filtered}
             />

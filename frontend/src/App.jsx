@@ -19,7 +19,7 @@ import Password from "./pages/Password";
 import CourseCreate from "./pages/CourseCreate";
 import FreeDays from "./pages/FreeDays";
 import AdminRatings from "./pages/AdminRating"; // <-- Ratings
-import Contact from "./pages/Contact";          // <-- NEW: Contact directory
+import Contact from "./pages/Contact";          // <-- Contact directory
 
 // Redirect to /login when unauthenticated, preserving intended route
 function RequireAuth({ children }) {
@@ -59,14 +59,17 @@ export default function App() {
                     </Protected>
                   }
                 />
+
+                {/* Default route -> Pending; now allows editor too */}
                 <Route
                   path="/"
                   element={
-                    <Protected roles={["admin", "teacher"]}>
+                    <Protected roles={["admin", "teacher", "editor"]}>
                       <Pending />
                     </Protected>
                   }
                 />
+
                 <Route
                   path="/courses/:id"
                   element={
@@ -75,14 +78,17 @@ export default function App() {
                     </Protected>
                   }
                 />
+
+                {/* Pending page: admin, teacher, editor */}
                 <Route
                   path="/pending"
                   element={
-                    <Protected roles={["admin", "teacher"]}>
+                    <Protected roles={["admin", "teacher", "editor"]}>
                       <Pending />
                     </Protected>
                   }
                 />
+
                 <Route
                   path="/confirmation"
                   element={
@@ -91,14 +97,17 @@ export default function App() {
                     </Protected>
                   }
                 />
+
+                {/* ✅ Completed: admin + editor */}
                 <Route
                   path="/completed"
                   element={
-                    <Protected roles={["admin"]}>
+                    <Protected roles={["admin", "editor"]}>
                       <Completed />
                     </Protected>
                   }
                 />
+
                 <Route
                   path="/unpaid"
                   element={
@@ -107,6 +116,7 @@ export default function App() {
                     </Protected>
                   }
                 />
+
                 <Route
                   path="/users"
                   element={
@@ -115,22 +125,27 @@ export default function App() {
                     </Protected>
                   }
                 />
+
+                {/* Profile: admin, teacher, editor */}
                 <Route
                   path="/profile"
                   element={
-                    <Protected roles={["admin", "teacher"]}>
+                    <Protected roles={["admin", "teacher", "editor"]}>
                       <Profile />
                     </Protected>
                   }
                 />
+
+                {/* Password: admin, teacher, editor */}
                 <Route
                   path="/password"
                   element={
-                    <Protected roles={["admin", "teacher"]}>
+                    <Protected roles={["admin", "teacher", "editor"]}>
                       <Password />
                     </Protected>
                   }
                 />
+
                 <Route
                   path="/courses/new"
                   element={
@@ -147,20 +162,22 @@ export default function App() {
                     </Protected>
                   }
                 />
+
+                {/* Free days: admin, teacher, editor */}
                 <Route
                   path="/free-days"
                   element={
-                    <Protected roles={["admin", "teacher"]}>
+                    <Protected roles={["admin", "teacher", "editor"]}>
                       <FreeDays />
                     </Protected>
                   }
                 />
 
-                {/* NEW: Contact directory visible to all logged-in users */}
+                {/* Contact directory: admin, teacher, editor */}
                 <Route
                   path="/contacts"
                   element={
-                    <Protected roles={["admin", "teacher"]}>
+                    <Protected roles={["admin", "teacher", "editor"]}>
                       <Contact />
                     </Protected>
                   }

@@ -43,6 +43,14 @@ export default function CourseDetail(){
   const [openPeople, setOpenPeople] = useState(false);
   const [peopleQuery, setPeopleQuery] = useState("");
 
+  // ✅ Shared style for any "row of buttons/badges" to prevent collapsing
+  const rowStyle = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,                 // horizontal + vertical spacing
+    alignItems: "center",
+  };
+
   const load = async ()=>{
     // fetch course (active+archived so deep links always work)
     const active = await api.get("/courses?status=active");
@@ -148,7 +156,7 @@ export default function CourseDetail(){
       renderCell={(c,row)=>{
         if(c.key==="_actions"){
           return (
-            <div className="row">
+            <div className="row" style={rowStyle}>
               <Button variant="ghost" onClick={()=>markComplete(row._id)}>Complete</Button>
               {isAdmin && <Button variant="ghost" onClick={()=>removePending(row._id)}>Delete</Button>}
             </div>
@@ -200,18 +208,20 @@ export default function CourseDetail(){
   });
 
   return (
-    <>
+    <div className="page page-course">
       <PageHeader
         // icon="/bigbang.svg"
         title={course?.name || "Course"}
         meta={
-          <div className="row">
-            <div className="badge">{course?.status==="archived" ? "Archived" : "Active"} · Classes: {course?.numberOfClasses ?? 0}</div>
+          <div className="row" style={rowStyle}>
+            <div className="badge">
+              {course?.status==="archived" ? "Archived" : "Active"} · Classes: {course?.numberOfClasses ?? 0}
+            </div>
             <div className="badge">{assignedBadge}</div>
           </div>
         }
         actions={isAdmin && (
-          <div className="row">
+          <div className="row" style={rowStyle}>
             {course?.status==="archived"
               ? <Button variant="ghost" onClick={unarchive}>Unarchive</Button>
               : <Button variant="ghost" onClick={archive}>Archive</Button>}
@@ -526,6 +536,6 @@ export default function CourseDetail(){
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

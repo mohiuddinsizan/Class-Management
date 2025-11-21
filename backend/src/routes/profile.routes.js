@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { auth, isAdmin } from "../middleware/auth.js";
 import { ClassSession } from "../models/ClassSession.js";
+import { UploadedVideo } from "../models/UploadedVideo.js";   // ⬅️ NEW
 import { User } from "../models/User.js";
-import { RatingLog } from "../models/RatingLog.js";    // ⬅️ NEW
+import { RatingLog } from "../models/RatingLog.js";
 
 const router = Router();
 
@@ -33,53 +34,150 @@ async function getRatingForTpin(tpin) {
   };
 }
 
-// GET /api/profile/me
+// ---------------------------------------------------------
+// GET /api/profile/me   (teacher + editor + admin)
+// ---------------------------------------------------------
 router.get("/me", auth, async (req, res) => {
   const user = await User.findById(req.user.id).lean();
-  const myConfirmed = await ClassSession.find({
-    teacher: req.user.id,
-    status: "adminConfirmed",
-  }).lean();
-  const unpaid = await ClassSession.find({
-    teacher: req.user.id,
-    status: "adminConfirmed",
-    paid: false,
-  }).lean();
-
-  const totalCompleted = myConfirmed.length;
-  const remainingBalance = unpaid.reduce(
-    (sum, c) => sum + c.hours * c.hourlyRate,
-    0
-  );
+  const role = user.role;
 
   const { summary, history } = await getRatingForTpin(user.tpin);
 
-  res.json({
+  // ===========================================================
+  // ROLE: TEACHER  (existing logic stays the same)
+  // ===========================================================
+  if (role === "teacher") {
+    const myConfirmed = await ClassSession.find({
+      teacher: req.user.id,
+      status: "adminConfirmed",
+    }).lean();
+
+    const unpaid = await ClassSession.find({
+      teacher: req.user.id,
+      status: "adminConfirmed",
+      paid: false,
+    }).lean();
+
+    const totalCompleted = myConfirmed.length;
+    const remainingBalance = unpaid.reduce(
+      (sum, c) => sum + c.hours * c.hourlyRate,
+      0
+    );
+
+    return res.json({
+      id: user._id,
+      name: user.name,
+      tpin: user.tpin,
+      role,
+      totals: { totalCompleted, remainingBalance },
+      ratingSummary: summary,
+      ratingHistory: history,
+    });
+  }
+
+  // ===========================================================
+  // ROLE: EDITOR  (NEW PROFILE LOGIC)
+  // ===========================================================
+  if (role === "editor") {
+    const uploads = await UploadedVideo.find({
+      editor: req.user.id,
+    }).lean();
+
+    const approved = uploads.filter((u) => u.status === "adminApproved");
+
+    const unpaid = uploads.filter(
+      (u) => u.status === "adminApproved" && u.paid === false
+    );
+
+    const remainingBalance = unpaid.reduce((sum, u) => sum + u.rate, 0);
+
+    return res.json({
+      id: user._id,
+      name: user.name,
+      tpin: user.tpin,
+      role,
+      totals: {
+        totalUploaded: uploads.length,
+        totalApproved: approved.length,
+        remainingBalance,
+      },
+      ratingSummary: summary,
+      ratingHistory: history,
+    });
+  }
+
+  // ===========================================================
+  // ROLE: ADMIN — show basic info only
+  // ===========================================================
+  return res.json({
     id: user._id,
     name: user.name,
     tpin: user.tpin,
-    role: user.role,
-    totals: { totalCompleted, remainingBalance },
-    ratingSummary: summary,     // { average, latest, count } or null
-    ratingHistory: history,     // [] if none
+    role,
+    ratingSummary: summary,
+    ratingHistory: history,
   });
 });
 
-// GET /api/profile/:id (admin can view others)
+// ---------------------------------------------------------
+// GET /api/profile/:id (admin can view teacher OR editor)
+// ---------------------------------------------------------
 router.get("/:id", auth, isAdmin, async (req, res) => {
   const user = await User.findById(req.params.id).lean();
   if (!user) return res.status(404).json({ error: "Not found" });
 
-  const classes = await ClassSession.find({ teacher: user._id }).lean();
-  const remainingBalance = classes
-    .filter((c) => c.status === "adminConfirmed" && !c.paid)
-    .reduce((s, c) => s + c.hours * c.hourlyRate, 0);
-
+  const role = user.role;
   const { summary, history } = await getRatingForTpin(user.tpin);
 
-  res.json({
+  // ======================
+  // TEACHER VIEW
+  // ======================
+  if (role === "teacher") {
+    const classes = await ClassSession.find({ teacher: user._id }).lean();
+
+    const remainingBalance = classes
+      .filter((c) => c.status === "adminConfirmed" && !c.paid)
+      .reduce((s, c) => s + c.hours * c.hourlyRate, 0);
+
+    return res.json({
+      user,
+      role,
+      remainingBalance,
+      ratingSummary: summary,
+      ratingHistory: history,
+    });
+  }
+
+  // ======================
+  // EDITOR VIEW
+  // ======================
+  if (role === "editor") {
+    const uploads = await UploadedVideo.find({
+      editor: user._id,
+    }).lean();
+
+    const unpaid = uploads.filter(
+      (u) => u.status === "adminApproved" && u.paid === false
+    );
+
+    const remainingBalance = unpaid.reduce((sum, u) => sum + u.rate, 0);
+
+    return res.json({
+      user,
+      role,
+      totals: {
+        totalUploaded: uploads.length,
+        totalApproved: uploads.filter((u) => u.status === "adminApproved").length,
+      },
+      remainingBalance,
+      ratingSummary: summary,
+      ratingHistory: history,
+    });
+  }
+
+  // ADMIN VIEWING ADMIN
+  return res.json({
     user,
-    remainingBalance,
     ratingSummary: summary,
     ratingHistory: history,
   });

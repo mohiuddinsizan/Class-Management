@@ -11,13 +11,15 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://class-management-rust.vercel.app",
 ];
-app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    return cb(new Error("Not allowed by CORS"));
-  },
-}));
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
+    },
+  })
+);
 app.use(express.json());
 
 /* ------------------------------ Health ---------------------------- */
@@ -34,10 +36,9 @@ import profileRoutes from "./routes/profile.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import accountRoutes from "./routes/account.routes.js";
 import freeDayRoutes from "./routes/freeday.routes.js";
-import ratingRoutes from "./routes/rating.routes.js";   
-import contactRoutes from "./routes/contact.routes.js";  
-
-
+import ratingRoutes from "./routes/rating.routes.js";
+import contactRoutes from "./routes/contact.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -47,8 +48,9 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/free-days", freeDayRoutes);
-app.use("/api/ratings", ratingRoutes);  
-app.use("/api/contacts", contactRoutes);        
+app.use("/api/ratings", ratingRoutes);
+app.use("/api/contacts", contactRoutes);
+app.use("/api/upload", uploadRoutes);
 
 /* --------------------------- Error Middleware --------------------------- */
 app.use((err, _req, res, _next) => {
@@ -65,12 +67,12 @@ export async function ensureDBConnection() {
     console.log("♻️  Reusing existing DB connection");
     return;
   }
-  
+
   if (!process.env.MONGO_URI) {
     console.warn("⚠️  MONGO_URI is not set; API will run without DB");
     return;
   }
-  
+
   try {
     await connectDB(process.env.MONGO_URI);
     isConnected = true;

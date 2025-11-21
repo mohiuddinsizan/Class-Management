@@ -2,28 +2,45 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api";
 import PageHeader from "../components/PageHeader";
-import { Stat } from "../components/Stat";
 import Section from "../components/Section";
 import Table from "../components/Table";
 import Button from "../components/Button";
 import "../styles/pages/reports.css";
 
 export default function Reports() {
-  const [summary, setSummary] = useState(null);
-  const [byTeacher, setByTeacher] = useState([]);
+  const [summary, setSummary] = useState(null);          // classes summary
+  const [byTeacher, setByTeacher] = useState([]);        // classes grouped by teacher
   const [range, setRange] = useState({ start: "", end: "" });
 
-  // all users (so we can map teacher ObjectId -> name + tpin)
+  // all users (for mapping teacher ObjectId -> name + tpin)
   const [users, setUsers] = useState([]);
-  const [downloading, setDownloading] = useState(false); // NEW
+
+  // uploaded-videos summary (we only care about totalVideos)
+  const [videoSummary, setVideoSummary] = useState(null);
+
+  const [downloading, setDownloading] = useState(false);
 
   const load = async (q = {}) => {
     const params = new URLSearchParams(
       Object.entries(q).filter(([_, v]) => v)
     );
-    const { data } = await api.get(`/reports/summary?${params.toString()}`);
-    setSummary(data.summary);
-    setByTeacher(data.byTeacher);
+
+    // fetch class summary + uploaded-videos summary together
+    const [classRes, uploadsRes] = await Promise.all([
+      api.get(`/reports/summary?${params.toString()}`),
+      api.get(`/reports/uploaded-videos?${params.toString()}`),
+    ]);
+
+    const classData = classRes.data || {};
+    const uploadsData = uploadsRes.data || {};
+
+    setSummary(classData.summary);
+    setByTeacher(classData.byTeacher || []);
+
+    // uploadsData.summary = { totalVideos, totalAmount }
+    setVideoSummary(
+      uploadsData.summary || { totalVideos: 0, totalAmount: 0 }
+    );
   };
 
   useEffect(() => {
@@ -269,7 +286,10 @@ export default function Reports() {
           </tr>
         </thead>
         <tbody>
-          ${rowsHtml || `<tr><td colspan="6" style="text-align:center; padding:16px;">No data for this range.</td></tr>`}
+          ${
+            rowsHtml ||
+            `<tr><td colspan="6" style="text-align:center; padding:16px;">No data for this range.</td></tr>`
+          }
         </tbody>
         <tfoot>
           <tr class="tfoot-total">
@@ -302,6 +322,8 @@ export default function Reports() {
   };
 
   /* ----------------------------- render ----------------------------- */
+
+  const uploadedCount = videoSummary?.totalVideos ?? 0;
 
   return (
     <div className="page page-reports">
@@ -338,7 +360,9 @@ export default function Reports() {
             </Button>
             <Button
               onClick={onDownloadPdf}
-              disabled={downloading || (!summary && enrichedByTeacher.length === 0)}
+              disabled={
+                downloading || (!summary && enrichedByTeacher.length === 0)
+              }
               style={{ marginLeft: 8 }}
             >
               {downloading ? "Preparing…" : "Download PDF"}
@@ -347,6 +371,7 @@ export default function Reports() {
         </div>
       </Section>
 
+      {/* main stats row – now with 4th card for uploads */}
       <div className="reports-stats">
         <div className="card">
           <div className="subtle">Total Classes</div>
@@ -364,6 +389,12 @@ export default function Reports() {
           <div className="subtle">Total Amount</div>
           <div className="h3" style={{ fontSize: "22px" }}>
             {summary?.totalAmount ?? 0}
+          </div>
+        </div>
+        <div className="card">
+          <div className="subtle">Uploaded Videos</div>
+          <div className="h3" style={{ fontSize: "22px" }}>
+            {uploadedCount}
           </div>
         </div>
       </div>

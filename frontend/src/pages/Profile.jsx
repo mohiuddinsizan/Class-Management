@@ -12,8 +12,12 @@ export default function Profile() {
 
   if (!me) return null;
 
+  const isEditor = me.role === "editor";
   const summary = me.ratingSummary;
   const history = me.ratingHistory || [];
+
+  // Safe access for totals
+  const totals = me.totals || {};
 
   return (
     <Card title="My Profile">
@@ -25,71 +29,106 @@ export default function Profile() {
 
       <div className="hr" />
 
-      <div className="row">
-        <div className="badge ok">
-          Completed Classes: {me.totals.totalCompleted}
-        </div>
-        <div className="badge warn">
-          Remaining Balance: {me.totals.remainingBalance}
-        </div>
-      </div>
-
-      {/* Rating summary */}
-      <div className="hr" />
-      <div className="row" style={{ alignItems: "center", gap: "12px" }}>
-        <span className="badge">Rating:</span>
-        {summary ? (
-          <>
-            <StarRating value={summary.average} showValue />
-            <span className="badge subtle">
-              ({summary.count} rating{summary.count > 1 ? "s" : ""})
-            </span>
-          </>
-        ) : (
-          <span className="badge subtle">No ratings yet</span>
-        )}
-      </div>
-
-      {/* Rating history: newest → oldest */}
-      {history.length > 0 && (
+      {/* EDITOR VIEW: only uploaded classes count */}
+      {isEditor ? (
         <>
-          <div className="hr" />
-          <div>
-            <h4 style={{ marginBottom: "8px" }}>Rating History</h4>
-            <div className="rating-history">
-              {history.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="rating-note"
-                  style={{
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    padding: "8px 10px",
-                    marginBottom: "6px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    <StarRating value={item.score} size={16} />
-                    <span style={{ fontSize: "11px", color: "#6b7280" }}>
-                      {new Date(item.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  {item.comment && (
-                    <div style={{ fontSize: "13px", whiteSpace: "pre-wrap" }}>
-                      {item.comment}
-                    </div>
-                  )}
-                </div>
-              ))}
+          <div className="row">
+            <div className="badge ok">
+              Uploaded Classes: {totals.uploadedCount ?? 0}
             </div>
           </div>
+        </>
+      ) : (
+        <>
+          {/* TEACHER/ADMIN VIEW: keep existing behavior */}
+          <div className="row">
+            <div className="badge ok">
+              Completed Classes: {totals.totalCompleted}
+            </div>
+            <div className="badge warn">
+              Remaining Balance: {totals.remainingBalance}
+            </div>
+          </div>
+
+          {/* Rating summary */}
+          <div className="hr" />
+          <div
+            className="row"
+            style={{ alignItems: "center", gap: "12px" }}
+          >
+            <span className="badge">Rating:</span>
+            {summary ? (
+              <>
+                <StarRating value={summary.average} showValue />
+                <span className="badge subtle">
+                  ({summary.count} rating
+                  {summary.count > 1 ? "s" : ""})
+                </span>
+              </>
+            ) : (
+              <span className="badge subtle">No ratings yet</span>
+            )}
+          </div>
+
+          {/* Rating history: newest → oldest */}
+          {history.length > 0 && (
+            <>
+              <div className="hr" />
+              <div>
+                <h4 style={{ marginBottom: "8px" }}>
+                  Rating History
+                </h4>
+                <div className="rating-history">
+                  {history.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="rating-note"
+                      style={{
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        padding: "8px 10px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        <StarRating
+                          value={item.score}
+                          size={16}
+                        />
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            color: "#6b7280",
+                          }}
+                        >
+                          {new Date(
+                            item.createdAt
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                      {item.comment && (
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            whiteSpace: "pre-wrap",
+                          }}
+                        >
+                          {item.comment}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </Card>
