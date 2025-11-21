@@ -1,52 +1,98 @@
+/* ===================== COMPLETED PAGE LAYOUT ===================== */
+
 /* Page spacing */
-.page-completed{ display:grid; gap: var(--s-8); }
+.page-completed{
+  display: grid;
+  gap: var(--sp-8);
+}
 
-/* Ensure Toolbar itself never causes left/right overflow */
-.toolbar{ max-width: 100%; overflow-x: hidden; }
+/* Make sure this page never causes sideways scroll */
+.page-completed,
+.page-completed .filters-grid,
+.page-completed .section,
+.page-completed .table-wrap{
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
-/* Filters grid (works with your Toolbar children) */
-.filters-grid{
+/* ===================== TOOLBAR + FILTERS ===================== */
+
+/* Toolbar on this page only */
+.page-completed .toolbar{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Filters grid inside the toolbar */
+.page-completed .filters-grid{
   --minw: 180px;
   display: grid;
-  gap: var(--s-4);
+  gap: var(--sp-4);
   grid-template-columns: repeat(5, minmax(var(--minw), 1fr));
   align-items: end;
   min-width: 0;
 }
-.filters-grid .field,
-.filters-grid select,
-.filters-grid input{
+
+.page-completed .filters-grid .field,
+.page-completed .filters-grid select,
+.page-completed .filters-grid input{
   width: 100%;
   min-width: 0;
 }
 
-/* Desktop actions on the right (Toolbar's right prop) */
-.filters-actions.desktop{
-  display:flex; gap: var(--s-3); align-items:center; flex-wrap: wrap;
+/* ===================== ACTION BUTTONS (RESET / RUN / BILL) ===================== */
+
+/* Desktop actions (Toolbar right prop) */
+.page-completed .filters-actions.desktop{
+  display: flex;
+  flex-wrap: wrap;              /* allow 2nd row */
+  align-items: center;
 }
 
-/* Mobile actions: hidden on desktop, shown and pushed below the filters */
-.filters-actions.mobile{
-  display:none;
-  margin-top: var(--s-3);
-  gap: var(--s-3);
+/* Mobile actions (inside Toolbar children) */
+.page-completed .filters-actions.mobile{
+  display: none;
+  flex-wrap: wrap;
+  margin-top: var(--sp-3);
 }
 
-/* Responsive breakpoints to prevent overlap and horizontal sliding */
+/* ---- REAL SPACING FIX (no overlap) ---- */
+/* Every child after the first gets left margin for horizontal spacing,
+   and a top margin so when it wraps, it sits CLEARLY under the previous row. */
+.page-completed .filters-actions.desktop > * + *,
+.page-completed .filters-actions.mobile > * + *{
+  margin-left: var(--sp-3);   /* horizontal gap between buttons */
+}
+
+.page-completed .filters-actions.desktop > *,
+.page-completed .filters-actions.mobile > *{
+  margin-top: var(--sp-2);    /* vertical gap between rows when they wrap */
+}
+
+/* ===================== RESPONSIVE ===================== */
+
 @media (max-width: 1200px){
-  .filters-grid{ grid-template-columns: repeat(3, minmax(var(--minw), 1fr)); }
-}
-@media (max-width: 860px){
-  .filters-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 640px){
-  .filters-grid{ grid-template-columns: 1fr; }
-  .filters-actions.desktop{ display:none; }
-  .filters-actions.mobile{ display:flex; flex-wrap:wrap; }
+  .page-completed .filters-grid{
+    grid-template-columns: repeat(3, minmax(var(--minw), 1fr));
+  }
 }
 
-/* General guards against sideways scroll from this page */
-.page-completed, .filters-grid, .section, .table-wrap{
-  max-width: 100%;
-  overflow-x: hidden;
+@media (max-width: 860px){
+  .page-completed .filters-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px){
+  .page-completed .filters-grid{
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide desktop actions, show mobile actions below filters */
+  .page-completed .filters-actions.desktop{
+    display: none;
+  }
+  .page-completed .filters-actions.mobile{
+    display: flex;
+  }
 }

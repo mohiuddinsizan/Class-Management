@@ -66,24 +66,31 @@ export default function Completed() {
   }, []);
 
   const columns = [
-    { key: "name", label: "Class" }, // NEW: class name
+    { key: "name", label: "Class" },
     { key: "course", label: "Course" },
     { key: "teacherName", label: "Teacher" },
     { key: "teacherTpin", label: "TPIN" },
     { key: "hours", label: "Hours" },
     { key: "hourlyRate", label: "Rate/hr" },
-    { key: "confirmedAt", label: "Confirmed At" },
-    { key: "paid", label: "Paid" },
+
+    // NEW date columns
+    { key: "completedAt", label: "Completed" },
+    { key: "confirmedAt", label: "Confirmed" },
+    { key: "paidAt", label: "Paid On" },
+
+    { key: "paid", label: "Paid?" },
   ];
 
   /* ----------------------------- helpers ----------------------------- */
   const fmtDate = (d) => {
+    if (!d) return "-";
     try {
       return new Date(d).toLocaleString();
     } catch {
       return "-";
     }
   };
+
   const onlyDate = (d) => {
     try {
       return new Date(d).toISOString().slice(0, 10);
@@ -91,6 +98,7 @@ export default function Completed() {
       return "";
     }
   };
+
   const money = (n) =>
     Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0 });
 
@@ -150,7 +158,7 @@ export default function Completed() {
         }
       }, 60);
     };
-    iframe.srcdoc = html; // avoids blob/object URLs → fewer blockers
+    iframe.srcdoc = html;
   };
 
   const buildBillHtml = () => {
@@ -177,7 +185,7 @@ export default function Completed() {
         <tr>
           <td>${i + 1}</td>
           <td>${escapeHtml(it.course?.name || "-")}</td>
-          <td>${escapeHtml(it.name || "—")}</td>        <!-- NEW: class name -->
+          <td>${escapeHtml(it.name || "—")}</td>
           <td>${escapeHtml(fmtDate(it.confirmedAt))}</td>
           <td class="num">${it.hours ?? "-"}</td>
           <td class="num">${money(it.hourlyRate ?? 0)}</td>
@@ -207,7 +215,7 @@ export default function Completed() {
               <tr>
                 <th>#</th>
                 <th>Course</th>
-                <th>Class</th>           <!-- NEW header -->
+                <th>Class</th>
                 <th>Date/Time</th>
                 <th>Hours</th>
                 <th>Rate</th>
@@ -322,31 +330,33 @@ export default function Completed() {
   };
 
   /* ----------------------------- UI ----------------------------- */
+const Actions = ({ className }) => (
+  <div className={`filters-actions ${className || ""}`}>
+    <Button
+      variant="ghost"
+      onClick={resetFilters}
+      disabled={loading || downloading}
+      style={{ marginRight: 8 }}   // 👈 spacing
+    >
+      Reset
+    </Button>
+    <Button
+      variant="ghost"
+      onClick={() => loadRows(filters)}
+      disabled={loading || downloading}
+      style={{ marginRight: 8 }}   // 👈 spacing
+    >
+      Apply Filters
+    </Button>
+    <Button
+      onClick={onDownloadBill}
+      disabled={loading || downloading || rowsForBill.length === 0}
+    >
+      {downloading ? "Processing…" : "Mark Paid & Download Bill (PDF)"}
+    </Button>
+  </div>
+);
 
-  const Actions = ({ className }) => (
-    <div className={`filters-actions ${className || ""}`}>
-      <Button
-        variant="ghost"
-        onClick={resetFilters}
-        disabled={loading || downloading}
-      >
-        Reset
-      </Button>
-      <Button
-        variant="ghost"
-        onClick={() => loadRows(filters)}
-        disabled={loading || downloading}
-      >
-        Apply Filters
-      </Button>
-      <Button
-        onClick={onDownloadBill}
-        disabled={loading || downloading || rowsForBill.length === 0}
-      >
-        {downloading ? "Processing…" : "Mark Paid & Download Bill (PDF)"}
-      </Button>
-    </div>
-  );
 
   return (
     <div className="page page-completed">
@@ -439,17 +449,19 @@ export default function Completed() {
             renderCell={(c, row) => {
               if (c.key === "course") return row.course?.name || "-";
               if (c.key === "name")
-                return row.name || <span className="subtle">—</span>; // NEW
-              if (c.key === "confirmedAt")
-                return row.confirmedAt
-                  ? new Date(row.confirmedAt).toLocaleString()
-                  : "-";
+                return row.name || <span className="subtle">—</span>;
+
+              if (c.key === "completedAt") return fmtDate(row.completedAt);
+              if (c.key === "confirmedAt") return fmtDate(row.confirmedAt);
+              if (c.key === "paidAt") return fmtDate(row.paidAt);
+
               if (c.key === "paid")
                 return row.paid ? (
                   <span className="badge ok">Paid</span>
                 ) : (
                   <span className="badge warn">Unpaid</span>
                 );
+
               return row[c.key];
             }}
           />

@@ -14,6 +14,7 @@ export default function Unpaid(){
   const [loading, setLoading] = useState(false);
 
   const fmt = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
   const load = async ()=>{
     setLoading(true);
@@ -53,23 +54,29 @@ export default function Unpaid(){
   const total = rows.reduce((s,x)=> s + (x.amount || 0), 0);
 
   const columns = [
-    {key:"name", label:"Class"},             // NEW
+    {key:"name", label:"Class"},
     {key:"course", label:"Course"},
     {key:"teacherName", label:"Teacher"},
     {key:"teacherTpin", label:"TPIN"},
     {key:"hours", label:"Hours"},
     {key:"hourlyRate", label:"Rate/hr"},
     {key:"amount", label:"Amount"},
+    {key:"completedAt", label:"Completed"},
+    {key:"confirmedAt", label:"Confirmed"},
+    {key:"paidAt", label:"Paid On"},     // will be empty on unpaid list, but useful if you reuse pattern
     {key:"_actions", label:"Actions"}
   ];
 
   return (
     <div className="page page-unpaid">
       <PageHeader
-        // icon="/bigbang.svg"
         title="Unpaid"
         meta={<div className="badge">Items: {rows.length}</div>}
-        actions={rows.length > 0 ? <Button onClick={confirmAll} disabled={loading}>Confirm All Paid</Button> : null}
+        actions={rows.length > 0 ? (
+          <Button onClick={confirmAll} disabled={loading}>
+            Confirm All Paid
+          </Button>
+        ) : null}
       />
 
       <Toolbar right={<div className="badge">Total Due: {fmt.format(total)}</div>} />
@@ -83,12 +90,33 @@ export default function Unpaid(){
             rows={rows}
             renderCell={(c,row)=>{
               if(c.key==="course") return row.course?.name || "-";
-              if(c.key==="name") return row.name || <span className="subtle">—</span>;  {/* NEW */}
+              if(c.key==="name") return row.name || <span className="subtle">—</span>;
               if(c.key==="amount") return fmt.format(row.amount || 0);
+
+              if(c.key==="completedAt"){
+                return row.completedAt
+                  ? fmtDate.format(new Date(row.completedAt))
+                  : <span className="subtle">—</span>;
+              }
+
+              if(c.key==="confirmedAt"){
+                return row.confirmedAt
+                  ? fmtDate.format(new Date(row.confirmedAt))
+                  : <span className="subtle">—</span>;
+              }
+
+              if(c.key==="paidAt"){
+                return row.paidAt
+                  ? fmtDate.format(new Date(row.paidAt))
+                  : <span className="subtle">—</span>;
+              }
+
               if(c.key==="_actions"){
                 return (
                   <div style={{display:"flex",gap:8}}>
-                    <Button variant="ghost" disabled={loading} onClick={()=>markPaid(row._id)}>Mark Paid</Button>
+                    <Button variant="ghost" disabled={loading} onClick={()=>markPaid(row._id)}>
+                      Mark Paid
+                    </Button>
                   </div>
                 );
               }
