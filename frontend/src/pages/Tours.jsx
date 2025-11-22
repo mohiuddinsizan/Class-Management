@@ -40,20 +40,21 @@ export default function Tours() {
     notes: "",
   });
 
-  // Fancy dropdown (multi-select) like CourseCreate
+  // Fancy dropdown (multi-select)
   const [openPeople, setOpenPeople] = useState(false);
   const [peopleQuery, setPeopleQuery] = useState("");
   const triggerRef = useRef(null);
   const [dropdownRect, setDropdownRect] = useState(null);
 
   useEffect(() => {
-    // load eligible users (all roles; or restrict to admins+teachers if you want)
     Promise.all([
       api.get("/users", { params: { role: "admin" } }),
       api.get("/users", { params: { role: "teacher" } }),
       api.get("/users", { params: { role: "editor" } }),
     ])
-      .then(([a, t, e]) => setPeople([...(a.data || []), ...(t.data || []), ...(e.data || [])]))
+      .then(([a, t, e]) =>
+        setPeople([...(a.data || []), ...(t.data || []), ...(e.data || [])])
+      )
       .catch(() => setPeople([]));
 
     loadTours({});
@@ -76,7 +77,13 @@ export default function Tours() {
   };
 
   const resetFilters = () => {
-    const base = { userId: "", start: "", end: "", minBudget: "", maxBudget: "" };
+    const base = {
+      userId: "",
+      start: "",
+      end: "",
+      minBudget: "",
+      maxBudget: "",
+    };
     setFilters(base);
     loadTours(base);
   };
@@ -86,7 +93,11 @@ export default function Tours() {
     function updatePosition() {
       if (!openPeople || !triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });
+      setDropdownRect({
+        left: rect.left,
+        top: rect.bottom + 8,
+        width: rect.width,
+      });
     }
     if (openPeople) {
       updatePosition();
@@ -102,7 +113,10 @@ export default function Tours() {
   const togglePerson = (id) => {
     setForm((s) => {
       const has = s.users.includes(id);
-      return { ...s, users: has ? s.users.filter((x) => x !== id) : [...s.users, id] };
+      return {
+        ...s,
+        users: has ? s.users.filter((x) => x !== id) : [...s.users, id],
+      };
     });
   };
 
@@ -146,7 +160,8 @@ export default function Tours() {
         notes: String(form.notes || ""),
       };
       if (!payload.name) throw new Error("Name is required.");
-      if (!payload.startDate || !payload.endDate) throw new Error("Start and End date are required.");
+      if (!payload.startDate || !payload.endDate)
+        throw new Error("Start and End date are required.");
 
       await api.post("/tours", payload);
       setOpenCreate(false);
@@ -170,7 +185,9 @@ export default function Tours() {
   const updateBudgetCompleted = async (row, value) => {
     setBusyId(row._id);
     try {
-      await api.patch(`/tours/${row._id}`, { budgetCompleted: Number(value || 0) });
+      await api.patch(`/tours/${row._id}`, {
+        budgetCompleted: Number(value || 0),
+      });
       await loadTours(filters);
     } finally {
       setBusyId(null);
@@ -199,11 +216,17 @@ export default function Tours() {
 
   return (
     <div className="page page-tours">
+      {/* Lock the content area at viewport height (no outer scroll on desktop) */}
+      <style>{`
+        :root { --appbar-h: 64px; }
+        .content { overflow: hidden; } /* ensure only inner list scrolls */
+      `}</style>
+
       <PageHeader
         title="Tour Management"
         meta={<div className="badge">Total: {rows.length}</div>}
         actions={
-          <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+          <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
             <Button variant="ghost" onClick={() => setOpenCreate((v) => !v)}>
               {openCreate ? "Close" : "Add New Tour"}
             </Button>
@@ -211,307 +234,357 @@ export default function Tours() {
         }
       />
 
-      {/* Quick stats */}
-      <div className="tours-stats">
-        <div className="stat">
-          <div className="label">Tours</div>
-          <div className="value">{rows.length}</div>
-        </div>
-        <div className="stat">
-          <div className="label">Budget Given</div>
-          <div className="value">
-            {rows.reduce((s, r) => s + Number(r.budgetGiven || 0), 0).toLocaleString()}
-          </div>
-        </div>
-        <div className="stat">
-          <div className="label">Budget Completed</div>
-          <div className="value">
-            {rows.reduce((s, r) => s + Number(r.budgetCompleted || 0), 0).toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <Section title="Filters">
-        <div className="filters-grid">
-          <Field label="User">
-            <select
-              value={filters.userId}
-              onChange={(e) => setFilters((s) => ({ ...s, userId: e.target.value }))}
-            >
-              <option value="">All</option>
-              {people.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.name} ({p.role})
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Start (from)">
-            <input
-              type="date"
-              value={filters.start}
-              onChange={(e) => setFilters((s) => ({ ...s, start: e.target.value }))}
-            />
-          </Field>
-
-          <Field label="End (to)">
-            <input
-              type="date"
-              value={filters.end}
-              onChange={(e) => setFilters((s) => ({ ...s, end: e.target.value }))}
-            />
-          </Field>
-
-          <Field label="Min Budget">
-            <input
-              type="number"
-              value={filters.minBudget}
-              onChange={(e) => setFilters((s) => ({ ...s, minBudget: e.target.value }))}
-              placeholder="e.g., 1000"
-            />
-          </Field>
-          <Field label="Max Budget">
-            <input
-              type="number"
-              value={filters.maxBudget}
-              onChange={(e) => setFilters((s) => ({ ...s, maxBudget: e.target.value }))}
-              placeholder="e.g., 5000"
-            />
-          </Field>
-        </div>
-
-        <div className="row" style={{ gap: 8, marginTop: 8 }}>
-          <Button variant="ghost" onClick={resetFilters} disabled={loading}>
-            Reset
-          </Button>
-          <Button onClick={() => loadTours(filters)} disabled={loading}>
-            Apply Filters
-          </Button>
-        </div>
-      </Section>
-
-      {/* Create panel */}
-      {openCreate && (
-        <Section title="Add New Tour" description="Create a new tour. Budgets can be adjusted later.">
-          <form onSubmit={submitCreate} className="tours-create-form">
-            <Field label="Tour name">
-              <input
-                value={form.name}
-                onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-                placeholder="e.g., Dhaka Roadshow"
-              />
+      {/* Top controls (non-scroll) */}
+      <div className="tours-top">
+        <Section title="Filters">
+          <div className="filters-grid">
+            <Field label="User">
+              <select
+                value={filters.userId}
+                onChange={(e) =>
+                  setFilters((s) => ({ ...s, userId: e.target.value }))
+                }
+              >
+                <option value="">All</option>
+                {people.map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {p.name} ({p.role})
+                  </option>
+                ))}
+              </select>
             </Field>
 
-            <Field label="From date">
+            <Field label="Start (from)">
               <input
                 type="date"
-                value={form.startDate}
-                onChange={(e) => setForm((s) => ({ ...s, startDate: e.target.value }))}
+                value={filters.start}
+                onChange={(e) =>
+                  setFilters((s) => ({ ...s, start: e.target.value }))
+                }
               />
             </Field>
 
-            <Field label="To date">
+            <Field label="End (to)">
               <input
                 type="date"
-                value={form.endDate}
-                onChange={(e) => setForm((s) => ({ ...s, endDate: e.target.value }))}
+                value={filters.end}
+                onChange={(e) =>
+                  setFilters((s) => ({ ...s, end: e.target.value }))
+                }
               />
             </Field>
 
-            {/* People multi-select (like CourseCreate) */}
-            <div className="full">
-              <div className="h3" style={{ marginBottom: "var(--sp-2)" }}>
-                Select participants
-              </div>
-              <div style={{ position: "relative" }}>
-                <button
-                  type="button"
-                  ref={triggerRef}
-                  onClick={() => setOpenPeople((v) => !v)}
-                  className="people-trigger"
-                >
-                  <span style={{ fontWeight: 700 }}>
-                    {form.users.length > 0 ? `${form.users.length} selected` : "Select users"}
-                  </span>
-                  <span className="people-hint">admins, teachers, editors</span>
-                </button>
-              </div>
-            </div>
-
-            <Field label="Given budget">
+            <Field label="Min Budget">
               <input
                 type="number"
-                value={form.budgetGiven}
-                onChange={(e) => setForm((s) => ({ ...s, budgetGiven: e.target.value }))}
+                value={filters.minBudget}
+                onChange={(e) =>
+                  setFilters((s) => ({ ...s, minBudget: e.target.value }))
+                }
+                placeholder="e.g., 1000"
+              />
+            </Field>
+            <Field label="Max Budget">
+              <input
+                type="number"
+                value={filters.maxBudget}
+                onChange={(e) =>
+                  setFilters((s) => ({ ...s, maxBudget: e.target.value }))
+                }
                 placeholder="e.g., 5000"
               />
             </Field>
+          </div>
 
-            <Field label="Completed budget (editable later)">
-              <input
-                type="number"
-                value={form.budgetCompleted}
-                onChange={(e) => setForm((s) => ({ ...s, budgetCompleted: e.target.value }))}
-                placeholder="e.g., 4500"
-              />
-            </Field>
+          <div className="row" style={{ gap: 8, marginTop: 8 }}>
+            <Button variant="ghost" onClick={resetFilters} disabled={loading}>
+              Reset
+            </Button>
+            <Button onClick={() => loadTours(filters)} disabled={loading}>
+              Apply Filters
+            </Button>
+          </div>
+        </Section>
 
-            <Field label="Notes">
-              <textarea
-                rows={3}
-                value={form.notes}
-                onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))}
-                placeholder="Optional notes..."
-              />
-            </Field>
-
-            <div className="form-actions">
-              <Button className="btn btn-primary" disabled={creating}>
-                {creating ? "Creating..." : "Create Tour"}
-              </Button>
-              <Button variant="ghost" type="button" onClick={() => setOpenCreate(false)} disabled={creating}>
-                Cancel
-              </Button>
-            </div>
-
-            {err && (
-              <div className="badge err full" style={{ marginTop: 8 }}>
-                {err}
-              </div>
-            )}
-          </form>
-
-          {/* DROPDOWN PORTAL-STYLE */}
-          {openPeople && dropdownRect && (
-            <div
-              className="people-dropdown"
-              style={{
-                position: "fixed",
-                left: dropdownRect.left,
-                top: dropdownRect.top,
-                width: dropdownRect.width,
-              }}
-            >
-              <div className="people-search">
+        {openCreate && (
+          <Section
+            title="Add New Tour"
+            description="Create a new tour. Budgets can be adjusted later."
+          >
+            <form onSubmit={submitCreate} className="tours-create-form">
+              <Field label="Tour name">
                 <input
-                  placeholder="Search name, role, or TPIN..."
-                  value={peopleQuery}
-                  onChange={(e) => setPeopleQuery(e.target.value)}
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((s) => ({ ...s, name: e.target.value }))
+                  }
+                  placeholder="e.g., Dhaka Roadshow"
                 />
-              </div>
+              </Field>
 
-              <div className="people-list">
-                {people.length === 0 && (
-                  <div className="people-empty">No eligible users.</div>
-                )}
-                {people.length > 0 && filteredPeople.length === 0 && (
-                  <div className="people-empty">No matches.</div>
-                )}
+              <Field label="From date">
+                <input
+                  type="date"
+                  value={form.startDate}
+                  onChange={(e) =>
+                    setForm((s) => ({ ...s, startDate: e.target.value }))
+                  }
+                />
+              </Field>
 
-                {filteredPeople.map((t) => {
-                  const selected = form.users?.includes(t._id);
-                  return (
-                    <label key={t._id} className={`people-row ${selected ? "selected" : ""}`}>
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => togglePerson(t._id)}
-                        className="people-native"
-                      />
-                      <span className="people-box" aria-hidden>
-                        {selected && (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 6L9 17l-5-5" />
-                          </svg>
-                        )}
-                      </span>
-                      <div className="people-meta">
-                        <div className="people-name" title={t.name}>
-                          {t.name}
-                        </div>
-                        <div className="people-sub">
-                          <span>{t.role}</span>
-                          <span>TPIN {t.tpin}</span>
-                        </div>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
+              <Field label="To date">
+                <input
+                  type="date"
+                  value={form.endDate}
+                  onChange={(e) =>
+                    setForm((s) => ({ ...s, endDate: e.target.value }))
+                  }
+                />
+              </Field>
 
-              <div className="people-footer">
-                <span className="people-count">{form.users.length} selected</span>
-                <div className="people-actions">
+              {/* People multi-select */}
+              <div className="full">
+                <div className="h3" style={{ marginBottom: "var(--sp-2)" }}>
+                  Select participants
+                </div>
+                <div style={{ position: "relative" }}>
                   <button
                     type="button"
-                    onClick={() => setForm((s) => ({ ...s, users: [] }))}
-                    className="btn-small ghost"
+                    ref={triggerRef}
+                    onClick={() => setOpenPeople((v) => !v)}
+                    className="people-trigger"
                   >
-                    Clear
-                  </button>
-                  <button type="button" onClick={() => setOpenPeople(false)} className="btn-small primary">
-                    Done
+                    <span style={{ fontWeight: 700 }}>
+                      {form.users.length > 0
+                        ? `${form.users.length} selected`
+                        : "Select users"}
+                    </span>
+                    <span className="people-hint">
+                      admins, teachers, editors
+                    </span>
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-        </Section>
-      )}
 
-      {/* List */}
-      <Section title="Existing Tours" description="Filter by user, date range or budget. Edit completed budget when finished.">
-        {loading && rows.length === 0 ? (
-          <Empty icon="🧭" title="Loading tours..." />
-        ) : rows.length === 0 ? (
-          <Empty icon="🧭" title="No tours found" />
-        ) : (
-          <Table
-            columns={columns}
-            rows={rows}
-            renderCell={(c, row) => {
-              if (c.key === "name") return row.name || "-";
-              if (c.key === "dates") return `${fmtDate(row.startDate)} → ${fmtDate(row.endDate)}`;
-              if (c.key === "users") {
-                const list = row.users || [];
-                if (list.length === 0) return <span className="subtle">—</span>;
-                const names = list.map((u) => u.name).join(", ");
-                return <span title={names}>{list.length} user(s)</span>;
-              }
-              if (c.key === "budgetGiven") return money(row.budgetGiven);
-              if (c.key === "budgetCompleted") {
-                const isBusy = busyId === row._id;
-                return (
-                  <div className="inline-edit">
-                    <input
-                      type="number"
-                      defaultValue={row.budgetCompleted || 0}
-                      disabled={isBusy}
-                      onBlur={(e) => {
-                        const val = Number(e.target.value || 0);
-                        if (val !== Number(row.budgetCompleted || 0)) {
-                          updateBudgetCompleted(row, val);
-                        }
-                      }}
-                    />
-                    {isBusy && <span className="saving">Saving…</span>}
+              <Field label="Given budget">
+                <input
+                  type="number"
+                  value={form.budgetGiven}
+                  onChange={(e) =>
+                    setForm((s) => ({ ...s, budgetGiven: e.target.value }))
+                  }
+                  placeholder="e.g., 5000"
+                />
+              </Field>
+
+              <Field label="Completed budget (editable later)">
+                <input
+                  type="number"
+                  value={form.budgetCompleted}
+                  onChange={(e) =>
+                    setForm((s) => ({
+                      ...s,
+                      budgetCompleted: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., 4500"
+                />
+              </Field>
+
+              <Field label="Notes">
+                <textarea
+                  rows={3}
+                  value={form.notes}
+                  onChange={(e) =>
+                    setForm((s) => ({ ...s, notes: e.target.value }))
+                  }
+                  placeholder="Optional notes..."
+                />
+              </Field>
+
+              <div className="form-actions">
+                <Button className="btn btn-primary" disabled={creating}>
+                  {creating ? "Creating..." : "Create Tour"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => setOpenCreate(false)}
+                  disabled={creating}
+                >
+                  Cancel
+                </Button>
+              </div>
+
+              {err && (
+                <div className="badge err full" style={{ marginTop: 8 }}>
+                  {err}
+                </div>
+              )}
+            </form>
+
+            {/* DROPDOWN PORTAL-STYLE */}
+            {openPeople && dropdownRect && (
+              <div
+                className="people-dropdown"
+                style={{
+                  position: "fixed",
+                  left: dropdownRect.left,
+                  top: dropdownRect.top,
+                  width: dropdownRect.width,
+                }}
+              >
+                <div className="people-search">
+                  <input
+                    placeholder="Search name, role, or TPIN..."
+                    value={peopleQuery}
+                    onChange={(e) => setPeopleQuery(e.target.value)}
+                  />
+                </div>
+
+                <div className="people-list">
+                  {people.length === 0 && (
+                    <div className="people-empty">No eligible users.</div>
+                  )}
+                  {people.length > 0 && filteredPeople.length === 0 && (
+                    <div className="people-empty">No matches.</div>
+                  )}
+
+                  {filteredPeople.map((t) => {
+                    const selected = form.users?.includes(t._id);
+                    return (
+                      <label
+                        key={t._id}
+                        className={`people-row ${selected ? "selected" : ""}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => togglePerson(t._id)}
+                          className="people-native"
+                        />
+                        <span className="people-box" aria-hidden>
+                          {selected && (
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="white"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                          )}
+                        </span>
+                        <div className="people-meta">
+                          <div className="people-name" title={t.name}>
+                            {t.name}
+                          </div>
+                          <div className="people-sub">
+                            <span>{t.role}</span>
+                            <span>TPIN {t.tpin}</span>
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="people-footer">
+                  <span className="people-count">
+                    {form.users.length} selected
+                  </span>
+                  <div className="people-actions">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((s) => ({ ...s, users: [] }))
+                      }
+                      className="btn-small ghost"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenPeople(false)}
+                      className="btn-small primary"
+                    >
+                      Done
+                    </button>
                   </div>
-                );
-              }
-              if (c.key === "actions")
-                return (
-                  <div className="row" style={{ gap: 8 }}>
-                    <Button variant="ghost" onClick={() => removeTour(row._id)} disabled={busyId === row._id}>
-                      {busyId === row._id ? "Deleting…" : "Delete"}
-                    </Button>
-                  </div>
-                );
-              return row[c.key];
-            }}
-          />
+                </div>
+              </div>
+            )}
+          </Section>
         )}
+      </div>
+
+      {/* LIST PANE — ONLY this area scrolls (desktop) */}
+      <Section
+        title="Existing Tours"
+        className="list-section"
+        description="Scroll inside this list; the page stays locked."
+      >
+        <div className="list-scroll">
+          {loading && rows.length === 0 ? (
+            <Empty icon="🧭" title="Loading tours..." />
+          ) : rows.length === 0 ? (
+            <Empty icon="🧭" title="No tours found" />
+          ) : (
+            <Table
+              columns={columns}
+              rows={rows}
+              renderCell={(c, row) => {
+                if (c.key === "name") return row.name || "-";
+                if (c.key === "dates")
+                  return `${fmtDate(row.startDate)} → ${fmtDate(row.endDate)}`;
+                if (c.key === "users") {
+                  const list = row.users || [];
+                  if (list.length === 0)
+                    return <span className="subtle">—</span>;
+                  const names = list.map((u) => u.name).join(", ");
+                  return <span title={names}>{list.length} user(s)</span>;
+                }
+                if (c.key === "budgetGiven") return money(row.budgetGiven);
+                if (c.key === "budgetCompleted") {
+                  const isBusy = busyId === row._id;
+                  return (
+                    <div className="inline-edit">
+                      <input
+                        type="number"
+                        defaultValue={row.budgetCompleted || 0}
+                        disabled={isBusy}
+                        onBlur={(e) => {
+                          const val = Number(e.target.value || 0);
+                          if (val !== Number(row.budgetCompleted || 0)) {
+                            updateBudgetCompleted(row, val);
+                          }
+                        }}
+                      />
+                      {isBusy && <span className="saving">Saving…</span>}
+                    </div>
+                  );
+                }
+                if (c.key === "actions")
+                  return (
+                    <div className="row" style={{ gap: 8 }}>
+                      <Button
+                        variant="ghost"
+                        onClick={() => removeTour(row._id)}
+                        disabled={busyId === row._id}
+                      >
+                        {busyId === row._id ? "Deleting…" : "Delete"}
+                      </Button>
+                    </div>
+                  );
+                return row[c.key];
+              }}
+            />
+          )}
+        </div>
       </Section>
     </div>
   );
