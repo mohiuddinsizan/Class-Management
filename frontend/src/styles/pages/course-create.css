@@ -1,5 +1,3 @@
-/* src/styles/pages/course-create.css */
-
 .page-course-create{
   display:grid;
   gap: var(--sp-8);
@@ -73,4 +71,12 @@
   display:flex;
   justify-content:flex-end;
   margin-top: var(--sp-3);
+}
+
+/* ===== People dropdown (scroll fix on mobile) ===== */
+.people-dropdown-list{
+  max-height: calc(60vh - 90px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* smooth, native scrolling on iOS */
+  overscroll-behavior: contain;      /* prevent body scroll while scrolling the list */
 }

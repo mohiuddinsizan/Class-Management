@@ -222,6 +222,7 @@ export default function CourseCreate() {
       {/* DROPDOWN PORTAL-STYLE (FIXED, ON TOP OF EVERYTHING) */}
       {openPeople && dropdownRect && (
         <div
+          className="people-dropdown"
           style={{
             position: "fixed",
             left: dropdownRect.left,
@@ -262,7 +263,7 @@ export default function CourseCreate() {
           </div>
 
           {/* List */}
-          <div style={{ maxHeight: "calc(60vh - 90px)", overflowY: "auto" }}>
+          <div className="people-dropdown-list">
             {people.length === 0 && (
               <div
                 style={{
