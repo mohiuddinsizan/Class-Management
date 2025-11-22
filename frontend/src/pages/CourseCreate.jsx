@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import PageHeader from "../components/PageHeader";
@@ -24,9 +24,6 @@ export default function CourseCreate() {
   // dropdown UI
   const [openPeople, setOpenPeople] = useState(false);
   const [peopleQuery, setPeopleQuery] = useState("");
-  const [dropdownRect, setDropdownRect] = useState(null);
-
-  const triggerRef = useRef(null);
 
   useEffect(() => {
     // fetch BOTH roles
@@ -35,30 +32,6 @@ export default function CourseCreate() {
       api.get("/users", { params: { role: "admin" } }),
     ]).then(([t, a]) => setPeople([...(t.data || []), ...(a.data || [])]));
   }, []);
-
-  // recalc dropdown position when opened / resize / scroll
-  useEffect(() => {
-    function updatePosition() {
-      if (!openPeople || !triggerRef.current) return;
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownRect({
-        left: rect.left,
-        top: rect.bottom + 8,
-        width: rect.width,
-      });
-    }
-
-    if (openPeople) {
-      updatePosition();
-      window.addEventListener("resize", updatePosition);
-      window.addEventListener("scroll", updatePosition, true);
-    }
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [openPeople]);
 
   const togglePerson = (id) => {
     setForm((s) => {
@@ -162,7 +135,6 @@ export default function CourseCreate() {
               {/* Trigger */}
               <button
                 type="button"
-                ref={triggerRef}
                 onClick={() => setOpenPeople((v) => !v)}
                 style={{
                   width: "100%",
@@ -200,6 +172,172 @@ export default function CourseCreate() {
                 </span>
               </button>
             </div>
+
+            {/* DROPDOWN BELOW IN NORMAL FLOW (NO FIXED POSITION) */}
+            {openPeople && (
+              <div className="people-dropdown-panel">
+                {/* Search */}
+                <div className="people-dropdown-header">
+                  <input
+                    placeholder="Search name, role, or TPIN..."
+                    value={peopleQuery}
+                    onChange={(e) => setPeopleQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Scrollable list */}
+                <div className="people-dropdown-list">
+                  {people.length === 0 && (
+                    <div className="people-dropdown-empty">
+                      No eligible users.
+                    </div>
+                  )}
+                  {people.length > 0 && filteredPeople.length === 0 && (
+                    <div className="people-dropdown-empty">No matches.</div>
+                  )}
+
+                  {filteredPeople.map((t) => {
+                    const selected = form.assignedTeachers?.includes(t._id);
+                    return (
+                      <label
+                        key={t._id}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "28px 1fr",
+                          gap: 12,
+                          alignItems: "center",
+                          padding: "12px 14px",
+                          borderBottom: "1px solid var(--border)",
+                          background: selected ? "#101538" : "transparent",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {/* native checkbox hidden; custom visual shown */}
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => togglePerson(t._id)}
+                          style={{
+                            position: "absolute",
+                            opacity: 0,
+                            pointerEvents: "none",
+                            width: 0,
+                            height: 0,
+                          }}
+                        />
+                        <span
+                          aria-hidden
+                          style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: 6,
+                            border: selected
+                              ? "1px solid transparent"
+                              : "1px solid var(--border)",
+                            background: selected
+                              ? "linear-gradient(135deg, var(--primary), var(--primary-2))"
+                              : "#0f1330",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: selected ? "var(--elev-2)" : "none",
+                          }}
+                        >
+                          {selected && (
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="white"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                          )}
+                        </span>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            minWidth: 0,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              color: "var(--text)",
+                              fontSize: "var(--fs-14)",
+                              lineHeight: 1.25,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                            title={t.name}
+                          >
+                            {t.name}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              flexWrap: "wrap",
+                              alignItems: "baseline",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: "var(--fs-12)",
+                                color: "var(--muted)",
+                              }}
+                            >
+                              {t.role}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "var(--fs-12)",
+                                color: "var(--muted)",
+                              }}
+                            >
+                              TPIN {t.tpin}
+                            </span>
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {/* Footer */}
+                <div className="people-dropdown-footer">
+                  <span className="people-dropdown-count">
+                    {selectedCount} selected
+                  </span>
+                  <div className="people-dropdown-actions">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((s) => ({ ...s, assignedTeachers: [] }))
+                      }
+                      className="people-dropdown-btn people-dropdown-btn-secondary"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenPeople(false)}
+                      className="people-dropdown-btn people-dropdown-btn-primary"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="form-actions">
@@ -218,247 +356,6 @@ export default function CourseCreate() {
           )}
         </form>
       </Section>
-
-      {/* DROPDOWN PORTAL-STYLE (FIXED, ON TOP OF EVERYTHING) */}
-      {openPeople && dropdownRect && (
-        <div
-          className="people-dropdown"
-          style={{
-            position: "fixed",
-            left: dropdownRect.left,
-            top: dropdownRect.top,
-            width: dropdownRect.width,
-            maxHeight: "60vh",
-            background:
-              "linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-lg)",
-            boxShadow: "var(--elev-3)",
-            overflow: "hidden",
-            zIndex: 1000,
-          }}
-        >
-          {/* Search */}
-          <div
-            style={{
-              padding: "10px",
-              borderBottom: "1px solid var(--border)",
-              background: "var(--surface-2)",
-            }}
-          >
-            <input
-              placeholder="Search name, role, or TPIN..."
-              value={peopleQuery}
-              onChange={(e) => setPeopleQuery(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "1px solid var(--border)",
-                borderRadius: "12px",
-                background: "#0f1330",
-                color: "var(--text)",
-                outline: "none",
-              }}
-            />
-          </div>
-
-          {/* List */}
-          <div className="people-dropdown-list">
-            {people.length === 0 && (
-              <div
-                style={{
-                  padding: 14,
-                  color: "var(--muted)",
-                  fontSize: "var(--fs-13)",
-                }}
-              >
-                No eligible users.
-              </div>
-            )}
-            {people.length > 0 && filteredPeople.length === 0 && (
-              <div
-                style={{
-                  padding: 14,
-                  color: "var(--muted)",
-                  fontSize: "var(--fs-13)",
-                }}
-              >
-                No matches.
-              </div>
-            )}
-
-            {filteredPeople.map((t) => {
-              const selected = form.assignedTeachers?.includes(t._id);
-              return (
-                <label
-                  key={t._id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "28px 1fr",
-                    gap: 12,
-                    alignItems: "center",
-                    padding: "12px 14px",
-                    borderBottom: "1px solid var(--border)",
-                    background: selected ? "#101538" : "transparent",
-                    cursor: "pointer",
-                  }}
-                >
-                  {/* native checkbox hidden; custom visual shown */}
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    onChange={() => togglePerson(t._id)}
-                    style={{
-                      position: "absolute",
-                      opacity: 0,
-                      pointerEvents: "none",
-                      width: 0,
-                      height: 0,
-                    }}
-                  />
-                  <span
-                    aria-hidden
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 6,
-                      border: selected
-                        ? "1px solid transparent"
-                        : "1px solid var(--border)",
-                      background: selected
-                        ? "linear-gradient(135deg, var(--primary), var(--primary-2))"
-                        : "#0f1330",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: selected ? "var(--elev-2)" : "none",
-                    }}
-                  >
-                    {selected && (
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                    )}
-                  </span>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 2,
-                      minWidth: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        color: "var(--text)",
-                        fontSize: "var(--fs-14)",
-                        lineHeight: 1.25,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                      title={t.name}
-                    >
-                      {t.name}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 12,
-                        flexWrap: "wrap",
-                        alignItems: "baseline",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "var(--fs-12)",
-                          color: "var(--muted)",
-                        }}
-                      >
-                        {t.role}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "var(--fs-12)",
-                          color: "var(--muted)",
-                        }}
-                      >
-                        TPIN {t.tpin}
-                      </span>
-                    </div>
-                  </div>
-                </label>
-              );
-            })}
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              padding: 10,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              background: "var(--surface-2)",
-              borderTop: "1px solid var(--border)",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "var(--fs-12)",
-                color: "var(--muted)",
-              }}
-            >
-              {selectedCount} selected
-            </span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                onClick={() =>
-                  setForm((s) => ({ ...s, assignedTeachers: [] }))
-                }
-                style={{
-                  border: "1px solid var(--border)",
-                  background: "#0f1330",
-                  color: "var(--muted)",
-                  padding: "8px 12px",
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                }}
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpenPeople(false)}
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--primary), var(--primary-2))",
-                  color: "#fff",
-                  padding: "8px 12px",
-                  border: "none",
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  boxShadow: "var(--elev-2)",
-                }}
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

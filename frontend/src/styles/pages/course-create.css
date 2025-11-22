@@ -73,10 +73,86 @@
   margin-top: var(--sp-3);
 }
 
-/* ===== People dropdown (scroll fix on mobile) ===== */
+/* ===== People dropdown panel (new container) ===== */
+.people-dropdown-panel{
+  margin-top: var(--sp-3);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header with search */
+.people-dropdown-header{
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.people-dropdown-header input{
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0f1330;
+  color: var(--text);
+  outline: none;
+}
+
+/* Scrollable list area */
 .people-dropdown-list{
-  max-height: calc(60vh - 90px);
+  flex: 1;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch; /* smooth, native scrolling on iOS */
-  overscroll-behavior: contain;      /* prevent body scroll while scrolling the list */
+  -webkit-overflow-scrolling: touch; /* smooth mobile scroll */
+  overscroll-behavior: contain;      /* stop body scroll while scrolling this */
+}
+
+.people-dropdown-empty{
+  padding: 14px;
+  color: var(--muted);
+  font-size: var(--fs-13);
+}
+
+/* Footer */
+.people-dropdown-footer{
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+}
+
+.people-dropdown-count{
+  font-size: var(--fs-12);
+  color: var(--muted);
+}
+
+.people-dropdown-actions{
+  display: flex;
+  gap: 8px;
+}
+
+.people-dropdown-btn{
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: var(--fs-13);
+}
+
+.people-dropdown-btn-secondary{
+  border: 1px solid var(--border);
+  background: #0f1330;
+  color: var(--muted);
+}
+
+.people-dropdown-btn-primary{
+  border: none;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: #fff;
+  box-shadow: var(--elev-2);
 }
