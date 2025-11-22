@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import { Link, useLocation } from "react-router-dom";
 
 export default function Navbar({ user, onLogout }) {
@@ -33,7 +34,7 @@ export default function Navbar({ user, onLogout }) {
         backdropFilter: "blur(10px)",
       }}
     >
-      <div className="container row">
+      <div className="container row" style={{ gap: 12 }}>
         <Link
           to="/"
           className="h1"
@@ -53,14 +54,14 @@ export default function Navbar({ user, onLogout }) {
 
         {user && (
           <>
-            <nav className="row" style={{ gap: 10 }}>
-              {/* Home: keep as before (admin/teacher UX thing in App.jsx) */}
+            <nav className="row" style={{ gap: 12, flexWrap: "wrap" }}>
+              {/* Home */}
               <Tab to="/home">Home</Tab>
 
-              {/* Pending for everyone (behavior differs per role in Pending.jsx) */}
+              {/* Pending for everyone */}
               <Tab to="/pending">Pending</Tab>
 
-              {/* Free Days for everyone (admin, teacher, editor) */}
+              {/* Free Days for everyone */}
               <Tab to="/free-days">Free Days</Tab>
 
               {/* Contact directory for everyone */}
@@ -74,20 +75,19 @@ export default function Navbar({ user, onLogout }) {
                   <Tab to="/unpaid">Unpaid</Tab>
                   <Tab to="/users">Users</Tab>
                   <Tab to="/reports">Reports</Tab>
-                  {/* Ratings tab for admin only */}
                   <Tab to="/ratings">Ratings</Tab>
+                  {/* NEW: Tours */}
+                  <Tab to="/tours">Tours</Tab>
                 </>
               )}
 
               {/* Editor can also see Completed (uploaded videos view) */}
-              {isEditor && (
-                <Tab to="/completed">Completed</Tab>
-              )}
+              {isEditor && <Tab to="/completed">Completed</Tab>}
 
               <Tab to="/profile">Profile</Tab>
             </nav>
 
-            <div className="right row">
+            <div className="right row" style={{ gap: 10 }}>
               <div className="badge">
                 {user.name} · {user.role} · TPIN {user.tpin}
               </div>

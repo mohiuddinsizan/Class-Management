@@ -39,6 +39,8 @@ import freeDayRoutes from "./routes/freeday.routes.js";
 import ratingRoutes from "./routes/rating.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
+import tourRoutes from "./routes/tour.routes.js";
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -51,6 +53,8 @@ app.use("/api/free-days", freeDayRoutes);
 app.use("/api/ratings", ratingRoutes);
 app.use("/api/contacts", contactRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/tours", tourRoutes);
+
 
 /* --------------------------- Error Middleware --------------------------- */
 app.use((err, _req, res, _next) => {

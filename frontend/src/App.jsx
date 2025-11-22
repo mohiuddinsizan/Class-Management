@@ -18,8 +18,9 @@ import Reports from "./pages/Reports";
 import Password from "./pages/Password";
 import CourseCreate from "./pages/CourseCreate";
 import FreeDays from "./pages/FreeDays";
-import AdminRatings from "./pages/AdminRating"; // <-- Ratings
-import Contact from "./pages/Contact";          // <-- Contact directory
+import AdminRatings from "./pages/AdminRating";
+import Contact from "./pages/Contact";
+import Tours from "./pages/Tours"; // NEW
 
 // Redirect to /login when unauthenticated, preserving intended route
 function RequireAuth({ children }) {
@@ -98,7 +99,7 @@ export default function App() {
                   }
                 />
 
-                {/* ✅ Completed: admin + editor */}
+                {/* Completed: admin + editor */}
                 <Route
                   path="/completed"
                   element={
@@ -189,6 +190,16 @@ export default function App() {
                   element={
                     <Protected roles={["admin"]}>
                       <AdminRatings />
+                    </Protected>
+                  }
+                />
+
+                {/* NEW: Tours (admin only) */}
+                <Route
+                  path="/tours"
+                  element={
+                    <Protected roles={["admin"]}>
+                      <Tours />
                     </Protected>
                   }
                 />

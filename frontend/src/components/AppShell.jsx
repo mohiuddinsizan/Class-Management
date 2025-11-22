@@ -120,7 +120,7 @@ function Icon({ name, size = 18 }) {
           <path d="M3 6h18M3 12h18M3 18h18" />
         </svg>
       );
-    case "contact": // NEW: Contact directory icon (phone book)
+    case "contact": // Contact directory icon
       return (
         <svg {...common}>
           <rect x="5" y="3" width="14" height="18" rx="2" />
@@ -129,6 +129,15 @@ function Icon({ name, size = 18 }) {
           <line x1="3" y1="7" x2="5" y2="7" />
           <line x1="3" y1="12" x2="5" y2="12" />
           <line x1="3" y1="17" x2="5" y2="17" />
+        </svg>
+      );
+      case "suitcase": // NEW: Tours icon (distinct from Free Days calendar)
+      return (
+        <svg {...common}>
+          <rect x="3" y="7" width="18" height="13" rx="2" />
+          <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+          <path d="M7 7v13" />
+          <path d="M17 7v13" />
         </svg>
       );
     default:
@@ -292,6 +301,13 @@ export default function AppShell({ children, onLogout }) {
               to="/ratings"
               label="Ratings"
               icon="star"
+              onNavigate={onNavigate}
+            />
+            {/* NEW: Tours (admin only) */}
+            <NavItem
+              to="/tours"
+              label="Tours"
+              icon="suitcase"
               onNavigate={onNavigate}
             />
           </>
