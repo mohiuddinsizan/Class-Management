@@ -5,24 +5,13 @@ provider:
   runtime: nodejs20.x
   region: ap-south-1
   stage: ${opt:stage, 'dev'}
-  memorySize: 512 
-  timeout: 29  
+  memorySize: 512
+  timeout: 29
 
   environment:
     MONGO_URI: ${env:MONGO_URI}
     JWT_SECRET: ${env:JWT_SECRET}
     NODE_ENV: production
-
-  # # IAM Role Statements
-  # iam:
-  #   role:
-  #     statements:
-  #       - Effect: Allow
-  #         Action:
-  #           - logs:CreateLogGroup
-  #           - logs:CreateLogStream
-  #           - logs:PutLogEvents
-  #         Resource: '*'
 
   iam:
     role:
@@ -34,7 +23,6 @@ provider:
             - logs:PutLogEvents
           Resource: "*"
 
-  # API Gateway CORS settings
   apiGateway:
     shouldStartNameWithService: true
 
@@ -46,7 +34,7 @@ functions:
           path: /{proxy+}
           method: ANY
           cors:
-            origin: '*'  # In production, specify exact origins
+            origin: '*'
             headers:
               - Content-Type
               - X-Amz-Date
@@ -74,7 +62,6 @@ plugins:
 
 package:
   patterns:
-    # - '!node_modules/**'
     - '!.git/**'
     - '!.vscode/**'
     - '!scripts/**'
