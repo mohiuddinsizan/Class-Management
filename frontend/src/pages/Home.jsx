@@ -115,7 +115,16 @@ export default function Home(){
   };
 
   return (
-    <div className="page page-home">
+    <div
+      className="page page-home"
+      style={{
+        height: "100vh",
+        maxHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       <PageHeader
         // icon="/bigbang.svg"
         title="Courses"
@@ -149,79 +158,88 @@ export default function Home(){
         </div>
       )}
 
-      <Section
-        title={view==="archived" ? "Archived Courses" : "All Active Courses"}
-        description={view==="archived"
-          ? "Courses removed from the homepage. You can unarchive or delete them."
-          : "Open a course to assign classes, and review pending or completed sessions."
-        }
-        actions={view==="active" ? <Link to="/courses/new" className="btn btn-ghost">New Course</Link> : null}
+      {/* Scrollable main content area (courses only) */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+        }}
       >
-        {err && (
-          <div className="badge err" style={{marginBottom:12}}>
-            {err} <Button variant="ghost" onClick={()=>fetchCourses(view)} style={{marginLeft:8}}>Retry</Button>
-          </div>
-        )}
+        <Section
+          title={view==="archived" ? "Archived Courses" : "All Active Courses"}
+          description={view==="archived"
+            ? "Courses removed from the homepage. You can unarchive or delete them."
+            : "Open a course to assign classes, and review pending or completed sessions."
+          }
+          actions={view==="active" ? <Link to="/courses/new" className="btn btn-ghost">New Course</Link> : null}
+        >
+          {err && (
+            <div className="badge err" style={{marginBottom:12}}>
+              {err} <Button variant="ghost" onClick={()=>fetchCourses(view)} style={{marginLeft:8}}>Retry</Button>
+            </div>
+          )}
 
-        {loading && courses.length===0 ? (
-          <Empty icon="⌛" title="Loading courses..." />
-        ) : courses.length === 0 ? (
-          <Empty
-            icon={view==="archived" ? "🗄️" : "📚"}
-            title={view==="archived" ? "No archived courses" : "No active courses"}
-            note={view==="active" ? "Use “Create Course” to add your first course." : undefined}
-          />
-        ) : (
-          <div className="home-grid">
-            {courses.map(c => {
-              const isBusy = busyId === c._id;
-              const total = Number(c.numberOfClasses || 0);
-              const done = Number(completedMap[String(c._id)] || 0);
+          {loading && courses.length===0 ? (
+            <Empty icon="⌛" title="Loading courses..." />
+          ) : courses.length === 0 ? (
+            <Empty
+              icon={view==="archived" ? "🗄️" : "📚"}
+              title={view==="archived" ? "No archived courses" : "No active courses"}
+              note={view==="active" ? "Use “Create Course” to add your first course." : undefined}
+            />
+          ) : (
+            <div className="home-grid">
+              {courses.map(c => {
+                const isBusy = busyId === c._id;
+                const total = Number(c.numberOfClasses || 0);
+                const done = Number(completedMap[String(c._id)] || 0);
 
-              return (
-                <div key={c._id} className="card" style={{ display: "grid", gap: 14 }}>
-                  <div className="h3">{c.name}</div>
-                  <div className="subtle">{c.subjects?.length ? c.subjects.join(", ") : "—"}</div>
+                return (
+                  <div key={c._id} className="card" style={{ display: "grid", gap: 14 }}>
+                    <div className="h3">{c.name}</div>
+                    <div className="subtle">{c.subjects?.length ? c.subjects.join(", ") : "—"}</div>
 
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <div className="badge">Classes: {c.numberOfClasses}</div>
-                    <div className="badge">{hasAssignees(c) ? `People: ${assigneeNames(c)}` : "Unassigned"}</div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <div className="badge">Classes: {c.numberOfClasses}</div>
+                      <div className="badge">{hasAssignees(c) ? `People: ${assigneeNames(c)}` : "Unassigned"}</div>
+                    </div>
+
+                    {/* Progress */}
+                    <ProgressBar total={total} done={done} />
+
+                    <div className="row" style={{gap:8, flexWrap:"wrap"}}>
+                      <Link to={`/courses/${c._id}`} className={`btn btn-primary ${isBusy ? "disabled" : ""}`} style={{ justifySelf: "start" }}>
+                        Open
+                      </Link>
+
+                      {view==="active" ? (
+                        <>
+                          <Button variant="ghost" onClick={()=>archive(c._id)} disabled={isBusy}>
+                            {isBusy ? "Archiving…" : "Archive"}
+                          </Button>
+                          <Button variant="ghost" onClick={()=>removeCourse(c._id)} disabled={isBusy}>
+                            {isBusy ? "Deleting…" : "Delete"}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="ghost" onClick={()=>unarchive(c._id)} disabled={isBusy}>
+                            {isBusy ? "Unarchiving…" : "Unarchive"}
+                          </Button>
+                          <Button variant="ghost" onClick={()=>removeCourse(c._id)} disabled={isBusy}>
+                            {isBusy ? "Deleting…" : "Delete"}
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
-
-                  {/* Progress */}
-                  <ProgressBar total={total} done={done} />
-
-                  <div className="row" style={{gap:8, flexWrap:"wrap"}}>
-                    <Link to={`/courses/${c._id}`} className={`btn btn-primary ${isBusy ? "disabled" : ""}`} style={{ justifySelf: "start" }}>
-                      Open
-                    </Link>
-
-                    {view==="active" ? (
-                      <>
-                        <Button variant="ghost" onClick={()=>archive(c._id)} disabled={isBusy}>
-                          {isBusy ? "Archiving…" : "Archive"}
-                        </Button>
-                        <Button variant="ghost" onClick={()=>removeCourse(c._id)} disabled={isBusy}>
-                          {isBusy ? "Deleting…" : "Delete"}
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button variant="ghost" onClick={()=>unarchive(c._id)} disabled={isBusy}>
-                          {isBusy ? "Unarchiving…" : "Unarchive"}
-                        </Button>
-                        <Button variant="ghost" onClick={()=>removeCourse(c._id)} disabled={isBusy}>
-                          {isBusy ? "Deleting…" : "Delete"}
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Section>
+                );
+              })}
+            </div>
+          )}
+        </Section>
+      </div>
     </div>
   );
 }

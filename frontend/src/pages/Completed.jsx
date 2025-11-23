@@ -111,7 +111,7 @@ export default function Completed() {
     }
   };
 
-  // If Start == End → that day; else if only Start → that day; else default today
+  // For label only; we won't use this to filter anymore
   const billDay = useMemo(() => {
     if (filters.start && filters.end && filters.start === filters.end)
       return filters.start;
@@ -119,11 +119,11 @@ export default function Completed() {
     return today;
   }, [filters.start, filters.end]);
 
+  // SIMPLE VERSION: bill rows = whatever is in the current class table
   const rowsForBill = useMemo(() => {
     if (!isAdmin) return [];
-    const day = billDay;
-    return classRows.filter((r) => onlyDate(r.confirmedAt) === day);
-  }, [classRows, billDay, isAdmin]);
+    return classRows || [];
+  }, [classRows, isAdmin]);
 
   // Try bulk; else patch individually (like Unpaid.jsx)
   const markBillAsPaid = async (ids) => {
@@ -184,7 +184,7 @@ export default function Completed() {
           <td>${i + 1}</td>
           <td>${escapeHtml(it.course?.name || "-")}</td>
           <td>${escapeHtml(it.name || "—")}</td>
-          <td>${escapeHtml(fmtDate(it.confirmedAt))}</td>
+          <td>${escapeHtml(fmtDate(it.confirmedAt || it.completedAt))}</td>
           <td class="num">${it.hours ?? "-"}</td>
           <td class="num">${money(it.hourlyRate ?? 0)}</td>
           <td class="num">${money(amt)}</td>
@@ -234,10 +234,6 @@ export default function Completed() {
               <div class="line"></div>
               <div class="cap">Teacher Signature</div>
             </div>
-            <div class="sig">
-              <div class="line"></div>
-              <div class="cap">In-Charge Signature</div>
-            </div>
           </div>
         </section>
         ${idx < groups.length - 1 ? "<hr/>" : ""}
@@ -282,7 +278,8 @@ export default function Completed() {
   .bill-table thead th{ background:#f3f4f6; text-align:left; font-weight:600; }
   .bill-table .right{ text-align:right }
   .bill-table .num{ text-align:right; font-variant-numeric: tabular-nums; }
-  .signatures{ display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 22px; }
+  .signatures{ display:grid; grid-template-columns: 1fr; gap: 20px; margin-top: 22px; }
+  .signatures-row{ display:grid; grid-template-columns: 1fr; gap: 20px; margin-top: 32px; }
   .sig .line{ height:1px; background:#111827; margin: 28px 0 6px; }
   .sig .cap{ font-size: 12px; color: var(--muted); }
   hr{ border:0; height:1px; background:var(--border); margin: 22px 0; }
@@ -326,6 +323,13 @@ export default function Completed() {
     </div>
 
     ${teacherBlocks}
+
+    <div class="signatures-row">
+      <div class="sig">
+        <div class="line"></div>
+        <div class="cap">In-Charge Signature</div>
+      </div>
+    </div>
   </div>
 </body>
 </html>
@@ -335,7 +339,7 @@ export default function Completed() {
   const onDownloadBill = async () => {
     const list = rowsForBill;
     if (!list || list.length === 0) {
-      alert("No completed classes for the selected date.");
+      alert("No completed classes in the current list.");
       return;
     }
     setDownloadingClasses(true);
@@ -670,7 +674,7 @@ export default function Completed() {
       <Button
         onClick={onDownloadBill}
         disabled={
-          loading || downloadingClasses || rowsForBill.length === 0
+          loading || downloadingClasses || classRows.length === 0
         }
       >
         {downloadingClasses ? "Processing…" : "Mark Paid & Download Bill"}
