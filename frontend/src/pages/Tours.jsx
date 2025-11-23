@@ -1,5 +1,5 @@
 // src/pages/Tours.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api";
 import PageHeader from "../components/PageHeader";
 import Section from "../components/Section";
@@ -97,13 +97,7 @@ export default function Tours() {
   };
 
   const resetFilters = () => {
-    const base = {
-      userId: "",
-      start: "",
-      end: "",
-      minBudget: "",
-      maxBudget: "",
-    };
+    const base = { userId: "", start: "", end: "", minBudget: "", maxBudget: "" };
     setFilters(base);
     loadTours(base);
   };
@@ -111,10 +105,7 @@ export default function Tours() {
   const togglePerson = (id) => {
     setForm((s) => {
       const has = s.users.includes(id);
-      return {
-        ...s,
-        users: has ? s.users.filter((x) => x !== id) : [...s.users, id],
-      };
+      return { ...s, users: has ? s.users.filter((x) => x !== id) : [...s.users, id] };
     });
   };
 
@@ -130,21 +121,13 @@ export default function Tours() {
     });
   }, [people, peopleQuery]);
 
-  const fmtDate = (d) => {
-    try {
-      return new Date(d).toLocaleDateString();
-    } catch {
-      return "-";
-    }
-  };
-  const money = (n) =>
-    Number(n || 0).toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-    });
+  const fmtDate = (d) => { try { return new Date(d).toLocaleDateString(); } catch { return "-"; } };
+  const money = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0 });
 
   const openCreateModal = () => {
     setErr("");
-    setForm(() => ({
+    setForm((s) => ({
+      ...s,
       name: "",
       startDate: today,
       endDate: today,
@@ -171,16 +154,13 @@ export default function Tours() {
         notes: String(form.notes || ""),
       };
       if (!payload.name) throw new Error("Name is required.");
-      if (!payload.startDate || !payload.endDate)
-        throw new Error("Start and End date are required.");
+      if (!payload.startDate || !payload.endDate) throw new Error("Start and End date are required.");
 
       await api.post("/tours", payload);
       setCreateOpen(false);
       await loadTours(filters);
     } catch (ex) {
-      setErr(
-        ex?.response?.data?.error || ex.message || "Failed to create tour."
-      );
+      setErr(ex?.response?.data?.error || ex.message || "Failed to create tour.");
     } finally {
       setCreating(false);
     }
@@ -189,9 +169,7 @@ export default function Tours() {
   const updateBudgetCompleted = async (row, value) => {
     setBusyId(row._id);
     try {
-      await api.patch(`/tours/${row._id}`, {
-        budgetCompleted: Number(value || 0),
-      });
+      await api.patch(`/tours/${row._id}`, { budgetCompleted: Number(value || 0) });
       await loadTours(filters);
     } finally {
       setBusyId(null);
@@ -219,16 +197,13 @@ export default function Tours() {
   ];
 
   return (
-    <div
-      className="page page-tours"
-      style={{
-        height: "100vh",
-        maxHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
+    <div className="page page-tours">
+      {/* Lock outer scroll on desktop */}
+      <style>{`
+        :root { --appbar-h: 64px; }
+        .content { overflow: hidden; }
+      `}</style>
+
       <PageHeader
         title="Tour Management"
         meta={<div className="badge">Total: {rows.length}</div>}
@@ -245,9 +220,7 @@ export default function Tours() {
           <Field label="User">
             <select
               value={filters.userId}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, userId: e.target.value }))
-              }
+              onChange={(e) => setFilters((s) => ({ ...s, userId: e.target.value }))}
             >
               <option value="">All</option>
               {people.map((p) => (
@@ -262,9 +235,7 @@ export default function Tours() {
             <input
               type="date"
               value={filters.start}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, start: e.target.value }))
-              }
+              onChange={(e) => setFilters((s) => ({ ...s, start: e.target.value }))}
             />
           </Field>
 
@@ -272,9 +243,7 @@ export default function Tours() {
             <input
               type="date"
               value={filters.end}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, end: e.target.value }))
-              }
+              onChange={(e) => setFilters((s) => ({ ...s, end: e.target.value }))}
             />
           </Field>
 
@@ -282,9 +251,7 @@ export default function Tours() {
             <input
               type="number"
               value={filters.minBudget}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, minBudget: e.target.value }))
-              }
+              onChange={(e) => setFilters((s) => ({ ...s, minBudget: e.target.value }))}
               placeholder="e.g., 1000"
             />
           </Field>
@@ -292,9 +259,7 @@ export default function Tours() {
             <input
               type="number"
               value={filters.maxBudget}
-              onChange={(e) =>
-                setFilters((s) => ({ ...s, maxBudget: e.target.value }))
-              }
+              onChange={(e) => setFilters((s) => ({ ...s, maxBudget: e.target.value }))}
               placeholder="e.g., 5000"
             />
           </Field>
@@ -310,97 +275,69 @@ export default function Tours() {
         </div>
       </Section>
 
-      {/* LIST (only scrollable area) */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflow: "hidden",
-        }}
+      {/* LIST (only scrollable area on desktop) */}
+      <Section
+        title="Existing Tours"
+        className="list-section"
+        description="Scroll inside this list; the page stays locked."
       >
-        <Section
-          title="Existing Tours"
-          className="list-section"
-          description="Scroll inside this list; the page stays locked."
-        >
-          <div
-            className="list-scroll"
-            style={{
-              height: "100%",
-              maxHeight: "100%",
-              overflowY: "auto",
-            }}
-          >
-            {loading && rows.length === 0 ? (
-              <Empty icon="🧭" title="Loading tours..." />
-            ) : rows.length === 0 ? (
-              <Empty icon="🧭" title="No tours found" />
-            ) : (
-              <Table
-                columns={columns}
-                rows={rows}
-                renderCell={(c, row) => {
-                  if (c.key === "name") return row.name || "-";
-                  if (c.key === "dates")
-                    return `${fmtDate(row.startDate)} → ${fmtDate(
-                      row.endDate
-                    )}`;
-                  if (c.key === "users") {
-                    const list = row.users || [];
-                    if (list.length === 0)
-                      return <span className="subtle">—</span>;
-                    const names = list.map((u) => u.name).join(", ");
-                    return <span title={names}>{list.length} user(s)</span>;
-                  }
-                  if (c.key === "budgetGiven") return money(row.budgetGiven);
-                  if (c.key === "budgetCompleted") {
-                    const isBusy = busyId === row._id;
-                    return (
-                      <div className="inline-edit">
-                        <input
-                          type="number"
-                          defaultValue={row.budgetCompleted || 0}
-                          disabled={isBusy}
-                          onBlur={(e) => {
-                            const val = Number(e.target.value || 0);
-                            if (val !== Number(row.budgetCompleted || 0)) {
-                              updateBudgetCompleted(row, val);
-                            }
-                          }}
-                        />
-                        {isBusy && (
-                          <span className="saving">Saving…</span>
-                        )}
-                      </div>
-                    );
-                  }
-                  if (c.key === "actions")
-                    return (
-                      <div className="row" style={{ gap: 8 }}>
-                        <Button
-                          variant="ghost"
-                          onClick={() => removeTour(row._id)}
-                          disabled={busyId === row._id}
-                        >
-                          {busyId === row._id ? "Deleting…" : "Delete"}
-                        </Button>
-                      </div>
-                    );
-                  return row[c.key];
-                }}
-              />
-            )}
-          </div>
-        </Section>
-      </div>
+        <div className="list-scroll">
+          {loading && rows.length === 0 ? (
+            <Empty icon="🧭" title="Loading tours..." />
+          ) : rows.length === 0 ? (
+            <Empty icon="🧭" title="No tours found" />
+          ) : (
+            <Table
+              columns={columns}
+              rows={rows}
+              renderCell={(c, row) => {
+                if (c.key === "name") return row.name || "-";
+                if (c.key === "dates") return `${fmtDate(row.startDate)} → ${fmtDate(row.endDate)}`;
+                if (c.key === "users") {
+                  const list = row.users || [];
+                  if (list.length === 0) return <span className="subtle">—</span>;
+                  const names = list.map((u) => u.name).join(", ");
+                  return <span title={names}>{list.length} user(s)</span>;
+                }
+                if (c.key === "budgetGiven") return money(row.budgetGiven);
+                if (c.key === "budgetCompleted") {
+                  const isBusy = busyId === row._id;
+                  return (
+                    <div className="inline-edit">
+                      <input
+                        type="number"
+                        defaultValue={row.budgetCompleted || 0}
+                        disabled={isBusy}
+                        onBlur={(e) => {
+                          const val = Number(e.target.value || 0);
+                          if (val !== Number(row.budgetCompleted || 0)) {
+                            updateBudgetCompleted(row, val);
+                          }
+                        }}
+                      />
+                      {isBusy && <span className="saving">Saving…</span>}
+                    </div>
+                  );
+                }
+                if (c.key === "actions")
+                  return (
+                    <div className="row" style={{ gap: 8 }}>
+                      <Button variant="ghost" onClick={() => removeTour(row._id)} disabled={busyId === row._id}>
+                        {busyId === row._id ? "Deleting…" : "Delete"}
+                      </Button>
+                    </div>
+                  );
+                return row[c.key];
+              }}
+            />
+          )}
+        </div>
+      </Section>
 
       {/* CREATE TOUR MODAL */}
       {createOpen && (
         <>
-          <div
-            className="overlay"
-            onClick={() => setCreateOpen(false)}
-          />
+          <div className="overlay" onClick={() => setCreateOpen(false)} />
           <div
             className={`create-modal ${isMobile ? "mobile" : ""}`}
             role="dialog"
@@ -423,9 +360,7 @@ export default function Tours() {
                 <Field label="Tour name">
                   <input
                     value={form.name}
-                    onChange={(e) =>
-                      setForm((s) => ({ ...s, name: e.target.value }))
-                    }
+                    onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
                     placeholder="e.g., Dhaka Roadshow"
                   />
                 </Field>
@@ -434,9 +369,7 @@ export default function Tours() {
                   <input
                     type="date"
                     value={form.startDate}
-                    onChange={(e) =>
-                      setForm((s) => ({ ...s, startDate: e.target.value }))
-                    }
+                    onChange={(e) => setForm((s) => ({ ...s, startDate: e.target.value }))}
                   />
                 </Field>
 
@@ -444,33 +377,22 @@ export default function Tours() {
                   <input
                     type="date"
                     value={form.endDate}
-                    onChange={(e) =>
-                      setForm((s) => ({ ...s, endDate: e.target.value }))
-                    }
+                    onChange={(e) => setForm((s) => ({ ...s, endDate: e.target.value }))}
                   />
                 </Field>
 
                 {/* Users */}
                 <div className="full">
-                  <div
-                    className="h3"
-                    style={{ marginBottom: "var(--sp-2)" }}
-                  >
-                    Participants
-                  </div>
+                  <div className="h3" style={{ marginBottom: "var(--sp-2)" }}>Participants</div>
                   <button
                     type="button"
                     className="people-trigger"
                     onClick={() => setPickerOpen(true)}
                   >
                     <span style={{ fontWeight: 700 }}>
-                      {form.users.length > 0
-                        ? `${form.users.length} selected`
-                        : "Select users"}
+                      {form.users.length > 0 ? `${form.users.length} selected` : "Select users"}
                     </span>
-                    <span className="people-hint">
-                      admins, teachers, editors
-                    </span>
+                    <span className="people-hint">admins, teachers, editors</span>
                   </button>
                 </div>
 
@@ -478,12 +400,7 @@ export default function Tours() {
                   <input
                     type="number"
                     value={form.budgetGiven}
-                    onChange={(e) =>
-                      setForm((s) => ({
-                        ...s,
-                        budgetGiven: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setForm((s) => ({ ...s, budgetGiven: e.target.value }))}
                     placeholder="e.g., 5000"
                   />
                 </Field>
@@ -492,12 +409,7 @@ export default function Tours() {
                   <input
                     type="number"
                     value={form.budgetCompleted}
-                    onChange={(e) =>
-                      setForm((s) => ({
-                        ...s,
-                        budgetCompleted: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setForm((s) => ({ ...s, budgetCompleted: e.target.value }))}
                     placeholder="e.g., 4500"
                   />
                 </Field>
@@ -506,34 +418,20 @@ export default function Tours() {
                   <textarea
                     rows={3}
                     value={form.notes}
-                    onChange={(e) =>
-                      setForm((s) => ({ ...s, notes: e.target.value }))
-                    }
+                    onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))}
                     placeholder="Optional notes..."
                   />
                 </Field>
               </div>
 
-              {err && (
-                <div className="badge err full" style={{ marginTop: 8 }}>
-                  {err}
-                </div>
-              )}
+              {err && <div className="badge err full" style={{ marginTop: 8 }}>{err}</div>}
             </form>
 
             <div className="create-foot">
-              <Button
-                variant="ghost"
-                onClick={() => setCreateOpen(false)}
-                disabled={creating}
-              >
+              <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
                 Cancel
               </Button>
-              <Button
-                className="btn btn-primary"
-                onClick={submitCreate}
-                disabled={creating}
-              >
+              <Button className="btn btn-primary" onClick={submitCreate} disabled={creating}>
                 {creating ? "Creating..." : "Create Tour"}
               </Button>
             </div>
@@ -544,26 +442,12 @@ export default function Tours() {
       {/* PEOPLE PICKER (layer above create modal) */}
       {pickerOpen && (
         <>
-          <div
-            className="overlay overlay-top"
-            onClick={() => setPickerOpen(false)}
-          />
+          <div className="overlay overlay-top" onClick={() => setPickerOpen(false)} />
           {!isMobile ? (
-            <div
-              className="picker-modal top"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Select users"
-            >
+            <div className="picker-modal top" role="dialog" aria-modal="true" aria-label="Select users">
               <div className="picker-head">
                 <div className="picker-title">Select users</div>
-                <button
-                  className="icon-close"
-                  onClick={() => setPickerOpen(false)}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
+                <button className="icon-close" onClick={() => setPickerOpen(false)} aria-label="Close">×</button>
               </div>
 
               <div className="people-search">
@@ -575,22 +459,12 @@ export default function Tours() {
               </div>
 
               <div className="people-list scroll">
-                {people.length === 0 && (
-                  <div className="people-empty">No eligible users.</div>
-                )}
-                {people.length > 0 &&
-                  filteredPeople.length === 0 && (
-                    <div className="people-empty">No matches.</div>
-                  )}
+                {people.length === 0 && <div className="people-empty">No eligible users.</div>}
+                {people.length > 0 && filteredPeople.length === 0 && <div className="people-empty">No matches.</div>}
                 {filteredPeople.map((t) => {
                   const selected = form.users?.includes(t._id);
                   return (
-                    <label
-                      key={t._id}
-                      className={`people-row ${
-                        selected ? "selected" : ""
-                      }`}
-                    >
+                    <label key={t._id} className={`people-row ${selected ? "selected" : ""}`}>
                       <input
                         type="checkbox"
                         checked={selected}
@@ -599,31 +473,14 @@ export default function Tours() {
                       />
                       <span className="people-box" aria-hidden>
                         {selected && (
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="white"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 6L9 17l-5-5" />
                           </svg>
                         )}
                       </span>
                       <div className="people-meta">
-                        <div
-                          className="people-name"
-                          title={t.name}
-                        >
-                          {t.name}
-                        </div>
-                        <div className="people-sub">
-                          <span>{t.role}</span>
-                          <span>TPIN {t.tpin}</span>
-                        </div>
+                        <div className="people-name" title={t.name}>{t.name}</div>
+                        <div className="people-sub"><span>{t.role}</span><span>TPIN {t.tpin}</span></div>
                       </div>
                     </label>
                   );
@@ -631,46 +488,19 @@ export default function Tours() {
               </div>
 
               <div className="people-footer">
-                <span className="people-count">
-                  {form.users.length} selected
-                </span>
+                <span className="people-count">{form.users.length} selected</span>
                 <div className="people-actions">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setForm((s) => ({ ...s, users: [] }))
-                    }
-                    className="btn-small ghost"
-                  >
-                    Clear
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPickerOpen(false)}
-                    className="btn-small primary"
-                  >
-                    Done
-                  </button>
+                  <button type="button" onClick={() => setForm((s) => ({ ...s, users: [] }))} className="btn-small ghost">Clear</button>
+                  <button type="button" onClick={() => setPickerOpen(false)} className="btn-small primary">Done</button>
                 </div>
               </div>
             </div>
           ) : (
-            <div
-              className="people-sheet top"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Select users"
-            >
+            <div className="people-sheet top" role="dialog" aria-modal="true" aria-label="Select users">
               <div className="sheet-bar" />
               <div className="picker-head mobile">
                 <div className="picker-title">Select users</div>
-                <button
-                  className="icon-close"
-                  onClick={() => setPickerOpen(false)}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
+                <button className="icon-close" onClick={() => setPickerOpen(false)} aria-label="Close">×</button>
               </div>
 
               <div className="people-search">
@@ -682,22 +512,12 @@ export default function Tours() {
               </div>
 
               <div className="people-list scroll">
-                {people.length === 0 && (
-                  <div className="people-empty">No eligible users.</div>
-                )}
-                {people.length > 0 &&
-                  filteredPeople.length === 0 && (
-                    <div className="people-empty">No matches.</div>
-                  )}
+                {people.length === 0 && <div className="people-empty">No eligible users.</div>}
+                {people.length > 0 && filteredPeople.length === 0 && <div className="people-empty">No matches.</div>}
                 {filteredPeople.map((t) => {
                   const selected = form.users?.includes(t._id);
                   return (
-                    <label
-                      key={t._id}
-                      className={`people-row ${
-                        selected ? "selected" : ""
-                      }`}
-                    >
+                    <label key={t._id} className={`people-row ${selected ? "selected" : ""}`}>
                       <input
                         type="checkbox"
                         checked={selected}
@@ -706,31 +526,14 @@ export default function Tours() {
                       />
                       <span className="people-box" aria-hidden>
                         {selected && (
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="white"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 6L9 17l-5-5" />
                           </svg>
                         )}
                       </span>
                       <div className="people-meta">
-                        <div
-                          className="people-name"
-                          title={t.name}
-                        >
-                          {t.name}
-                        </div>
-                        <div className="people-sub">
-                          <span>{t.role}</span>
-                          <span>TPIN {t.tpin}</span>
-                        </div>
+                        <div className="people-name" title={t.name}>{t.name}</div>
+                        <div className="people-sub"><span>{t.role}</span><span>TPIN {t.tpin}</span></div>
                       </div>
                     </label>
                   );
@@ -738,26 +541,10 @@ export default function Tours() {
               </div>
 
               <div className="people-footer">
-                <span className="people-count">
-                  {form.users.length} selected
-                </span>
+                <span className="people-count">{form.users.length} selected</span>
                 <div className="people-actions">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setForm((s) => ({ ...s, users: [] }))
-                    }
-                    className="btn-small ghost"
-                  >
-                    Clear
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPickerOpen(false)}
-                    className="btn-small primary"
-                  >
-                    Done
-                  </button>
+                  <button type="button" onClick={() => setForm((s) => ({ ...s, users: [] }))} className="btn-small ghost">Clear</button>
+                  <button type="button" onClick={() => setPickerOpen(false)} className="btn-small primary">Done</button>
                 </div>
               </div>
             </div>

@@ -400,23 +400,16 @@ export default function Reports() {
       </div>
 
       <Section title="By Teacher">
-        <div
-          style={{
-            maxHeight: 360,        // fixed box height
-            overflowY: "auto",     // scroll only inside this box
-          }}
-        >
-          <Table
-            columns={[
-              { key: "teacherTpin", label: "TPIN" },
-              { key: "teacherName", label: "Teacher" },
-              { key: "classes", label: "Classes" },
-              { key: "hours", label: "Hours" },
-              { key: "amount", label: "Amount" },
-            ]}
-            rows={enrichedByTeacher}
-          />
-        </div>
+        <Table
+          columns={[
+            { key: "teacherTpin", label: "TPIN" },
+            { key: "teacherName", label: "Teacher" },
+            { key: "classes", label: "Classes" },
+            { key: "hours", label: "Hours" },
+            { key: "amount", label: "Amount" },
+          ]}
+          rows={enrichedByTeacher}
+        />
       </Section>
     </div>
   );

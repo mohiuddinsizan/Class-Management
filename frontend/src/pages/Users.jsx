@@ -99,29 +99,13 @@ export default function Users() {
   });
 
   return (
-    <div
-      className="page page-users"
-      style={{
-        height: "100vh",
-        maxHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
+    <div className="page page-users">
       <PageHeader
         title="Users"
         meta={<div className="badge">Total: {users.length}</div>}
       />
 
-      <div
-        className="users-grid"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
+      <div className="users-grid">
         {/* Create user */}
         <Section
           title="Create User"
@@ -236,28 +220,21 @@ export default function Users() {
             </div>
           }
         >
-          <div
-            style={{
-              maxHeight: "calc(100vh - 260px)",
-              overflowY: "auto",
-            }}
-          >
-            {filtered.length === 0 ? (
-              <Empty
-                icon="👥"
-                title={loading ? "Loading..." : "No users found"}
+          {filtered.length === 0 ? (
+            <Empty
+              icon="👥"
+              title={loading ? "Loading..." : "No users found"}
             />
-            ) : (
-              <Table
-                columns={[
-                  { key: "name", label: "Name" },
-                  { key: "tpin", label: "TPIN" },
-                  { key: "role", label: "Role" },
-                ]}
-                rows={filtered}
-              />
-            )}
-          </div>
+          ) : (
+            <Table
+              columns={[
+                { key: "name", label: "Name" },
+                { key: "tpin", label: "TPIN" },
+                { key: "role", label: "Role" },
+              ]}
+              rows={filtered}
+            />
+          )}
         </Section>
       </div>
     </div>

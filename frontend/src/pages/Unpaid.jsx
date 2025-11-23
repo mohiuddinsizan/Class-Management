@@ -68,16 +68,7 @@ export default function Unpaid(){
   ];
 
   return (
-    <div
-      className="page page-unpaid"
-      style={{
-        height: "100vh",
-        maxHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
+    <div className="page page-unpaid">
       <PageHeader
         title="Unpaid"
         meta={<div className="badge">Items: {rows.length}</div>}
@@ -90,59 +81,50 @@ export default function Unpaid(){
 
       <Toolbar right={<div className="badge">Total Due: {fmt.format(total)}</div>} />
 
-      {/* Scrollable main content area */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-        }}
-      >
-        <Section>
-          {rows.length===0 ? (
-            <Empty icon="💸" title={loading ? "Loading..." : "No unpaid classes"} />
-          ) : (
-            <Table
-              columns={columns}
-              rows={rows}
-              renderCell={(c,row)=>{
-                if(c.key==="course") return row.course?.name || "-";
-                if(c.key==="name") return row.name || <span className="subtle">—</span>;
-                if(c.key==="amount") return fmt.format(row.amount || 0);
+      <Section>
+        {rows.length===0 ? (
+          <Empty icon="💸" title={loading ? "Loading..." : "No unpaid classes"} />
+        ) : (
+          <Table
+            columns={columns}
+            rows={rows}
+            renderCell={(c,row)=>{
+              if(c.key==="course") return row.course?.name || "-";
+              if(c.key==="name") return row.name || <span className="subtle">—</span>;
+              if(c.key==="amount") return fmt.format(row.amount || 0);
 
-                if(c.key==="completedAt"){
-                  return row.completedAt
-                    ? fmtDate.format(new Date(row.completedAt))
-                    : <span className="subtle">—</span>;
-                }
+              if(c.key==="completedAt"){
+                return row.completedAt
+                  ? fmtDate.format(new Date(row.completedAt))
+                  : <span className="subtle">—</span>;
+              }
 
-                if(c.key==="confirmedAt"){
-                  return row.confirmedAt
-                    ? fmtDate.format(new Date(row.confirmedAt))
-                    : <span className="subtle">—</span>;
-                }
+              if(c.key==="confirmedAt"){
+                return row.confirmedAt
+                  ? fmtDate.format(new Date(row.confirmedAt))
+                  : <span className="subtle">—</span>;
+              }
 
-                if(c.key==="paidAt"){
-                  return row.paidAt
-                    ? fmtDate.format(new Date(row.paidAt))
-                    : <span className="subtle">—</span>;
-                }
+              if(c.key==="paidAt"){
+                return row.paidAt
+                  ? fmtDate.format(new Date(row.paidAt))
+                  : <span className="subtle">—</span>;
+              }
 
-                if(c.key==="_actions"){
-                  return (
-                    <div style={{display:"flex",gap:8}}>
-                      <Button variant="ghost" disabled={loading} onClick={()=>markPaid(row._id)}>
-                        Mark Paid
-                      </Button>
-                    </div>
-                  );
-                }
-                return row[c.key];
-              }}
-            />
-          )}
-        </Section>
-      </div>
+              if(c.key==="_actions"){
+                return (
+                  <div style={{display:"flex",gap:8}}>
+                    <Button variant="ghost" disabled={loading} onClick={()=>markPaid(row._id)}>
+                      Mark Paid
+                    </Button>
+                  </div>
+                );
+              }
+              return row[c.key];
+            }}
+          />
+        )}
+      </Section>
     </div>
   );
 }

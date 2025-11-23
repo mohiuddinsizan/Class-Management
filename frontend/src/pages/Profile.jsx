@@ -1,4 +1,3 @@
-// src/pages/Profile.jsx
 import { useEffect, useState } from "react";
 import api from "../api";
 import Card from "../components/Card";
@@ -41,7 +40,7 @@ export default function Profile() {
         </>
       ) : (
         <>
-          {/* TEACHER/ADMIN VIEW: existing behavior */}
+          {/* TEACHER/ADMIN VIEW: keep existing behavior */}
           <div className="row">
             <div className="badge ok">
               Completed Classes: {totals.totalCompleted}
@@ -71,20 +70,15 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Rating history: newest → oldest, in fixed-height scroll box */}
+          {/* Rating history: newest → oldest */}
           {history.length > 0 && (
             <>
               <div className="hr" />
               <div>
-                <h4 style={{ marginBottom: "8px" }}>Rating History</h4>
-                <div
-                  className="rating-history"
-                  style={{
-                    maxHeight: 260,        // fixed height area
-                    overflowY: "auto",     // scroll *inside* this box
-                    paddingRight: 4,
-                  }}
-                >
+                <h4 style={{ marginBottom: "8px" }}>
+                  Rating History
+                </h4>
+                <div className="rating-history">
                   {history.map((item, idx) => (
                     <div
                       key={idx}
@@ -104,14 +98,19 @@ export default function Profile() {
                           marginBottom: "4px",
                         }}
                       >
-                        <StarRating value={item.score} size={16} />
+                        <StarRating
+                          value={item.score}
+                          size={16}
+                        />
                         <span
                           style={{
                             fontSize: "11px",
                             color: "#6b7280",
                           }}
                         >
-                          {new Date(item.createdAt).toLocaleString()}
+                          {new Date(
+                            item.createdAt
+                          ).toLocaleString()}
                         </span>
                       </div>
                       {item.comment && (
