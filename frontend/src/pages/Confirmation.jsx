@@ -66,7 +66,16 @@ export default function Confirmation() {
   ];
 
   return (
-    <div className="page page-confirmation">
+    <div
+      className="page page-confirmation"
+      style={{
+        height: "100vh",
+        maxHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       <PageHeader
         title="Confirmation Queue"
         meta={<div className="badge">Waiting: {rows.length}</div>}
@@ -98,42 +107,51 @@ export default function Confirmation() {
         }
       />
 
-      <Section>
-        {rows.length === 0 ? (
-          <Empty
-            icon="✅"
-            title={loading ? "Loading..." : "Nothing to confirm"}
-          />
-        ) : (
-          <Table
-            columns={columns}
-            rows={rows}
-            renderCell={(c, row) => {
-              if (c.key === "course") return row.course?.name || "-";
-              if (c.key === "name")
-                return row.name || <span className="subtle">—</span>;
-              if (c.key === "completedAt")
-                return row.completedAt
-                  ? new Date(row.completedAt).toLocaleString()
-                  : "-";
-              if (c.key === "_actions") {
-                return (
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <Button
-                      variant="ghost"
-                      disabled={loading}
-                      onClick={() => confirmOne(row._id)}
-                    >
-                      Confirm
-                    </Button>
-                  </div>
-                );
-              }
-              return row[c.key];
-            }}
-          />
-        )}
-      </Section>
+      {/* Scrollable main content area */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+        }}
+      >
+        <Section>
+          {rows.length === 0 ? (
+            <Empty
+              icon="✅"
+              title={loading ? "Loading..." : "Nothing to confirm"}
+            />
+          ) : (
+            <Table
+              columns={columns}
+              rows={rows}
+              renderCell={(c, row) => {
+                if (c.key === "course") return row.course?.name || "-";
+                if (c.key === "name")
+                  return row.name || <span className="subtle">—</span>;
+                if (c.key === "completedAt")
+                  return row.completedAt
+                    ? new Date(row.completedAt).toLocaleString()
+                    : "-";
+                if (c.key === "_actions") {
+                  return (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <Button
+                        variant="ghost"
+                        disabled={loading}
+                        onClick={() => confirmOne(row._id)}
+                      >
+                        Confirm
+                      </Button>
+                    </div>
+                  );
+                }
+                return row[c.key];
+              }}
+            />
+          )}
+        </Section>
+      </div>
     </div>
   );
 }

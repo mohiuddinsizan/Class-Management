@@ -1,3 +1,4 @@
+// src/pages/Contact.jsx
 import { useEffect, useMemo, useState } from "react";
 import api from "../api";
 import PageHeader from "../components/PageHeader";
@@ -88,7 +89,16 @@ export default function Contact() {
   ];
 
   return (
-    <div className="page page-contact">
+    <div
+      className="page page-contact"
+      style={{
+        height: "100vh",
+        maxHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       <PageHeader
         title="Contact Directory"
         meta={
@@ -98,7 +108,14 @@ export default function Contact() {
         }
       />
 
-      <div className="contact-layout">
+      <div
+        className="contact-layout"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
         {/* LEFT: my own info */}
         <Section
           title="My Contact Info"
@@ -163,26 +180,33 @@ export default function Contact() {
           title="Directory"
           description="Everyone can see this list. Only the owner of each row can edit their numbers on the left."
         >
-          {rows.length === 0 && !loadingList ? (
-            <Empty icon="📇" title="No users found" />
-          ) : (
-            <Table
-              columns={columns}
-              rows={rows}
-              renderCell={(c, row) => {
-                const value = row[c.key];
-                if (!value) return <span className="subtle">—</span>;
-                if (c.key === "role") {
-                  return (
-                    <span style={{ textTransform: "capitalize" }}>
-                      {value}
-                    </span>
-                  );
-                }
-                return value;
-              }}
-            />
-          )}
+          <div
+            style={{
+              maxHeight: "calc(100vh - 260px)",
+              overflowY: "auto",
+            }}
+          >
+            {rows.length === 0 && !loadingList ? (
+              <Empty icon="📇" title="No users found" />
+            ) : (
+              <Table
+                columns={columns}
+                rows={rows}
+                renderCell={(c, row) => {
+                  const value = row[c.key];
+                  if (!value) return <span className="subtle">—</span>;
+                  if (c.key === "role") {
+                    return (
+                      <span style={{ textTransform: "capitalize" }}>
+                        {value}
+                      </span>
+                    );
+                  }
+                  return value;
+                }}
+              />
+            )}
+          </div>
         </Section>
       </div>
     </div>

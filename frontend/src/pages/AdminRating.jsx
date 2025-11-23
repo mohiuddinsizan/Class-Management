@@ -252,7 +252,7 @@ export default function AdminRatings() {
             className="row"
             style={{
               gap: "var(--sp-3)",
-              alignItems: "flex-end", // 👈 aligns input + button bottoms
+              alignItems: "flex-end",
               flexWrap: "wrap",
             }}
           >
@@ -340,7 +340,13 @@ export default function AdminRatings() {
               <div className="hr" />
 
               {/* New rating editor */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "var(--sp-3)",
+                }}
+              >
                 <div className="h3">Add Rating Comment</div>
 
                 <div
@@ -410,8 +416,14 @@ export default function AdminRatings() {
 
               <div className="hr" />
 
-              {/* History */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
+              {/* History – fixed-height scroll area so comments don't grow the card */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "var(--sp-3)",
+                }}
+              >
                 <div className="h3">History (Newest first)</div>
                 {notes.length === 0 ? (
                   <div className="subtle">No ratings yet.</div>
@@ -420,8 +432,8 @@ export default function AdminRatings() {
                     style={{
                       display: "grid",
                       gap: "var(--sp-2)",
-                      maxHeight: 220,
-                      overflow: "auto",
+                      height: 220,          // fixed height
+                      overflowY: "auto",    // scroll only inside this area
                       paddingRight: 4,
                     }}
                   >
@@ -460,7 +472,7 @@ export default function AdminRatings() {
                             style={{
                               fontSize: "var(--fs-14)",
                               whiteSpace: "pre-wrap",
-                              marginBottom: 4,
+                              wordBreak: "break-word", // long words won't overflow
                             }}
                           >
                             {n.comment}

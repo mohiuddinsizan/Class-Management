@@ -51,6 +51,12 @@ export default function CourseDetail(){
     alignItems: "center",
   };
 
+  // ✅ Scroll box style so pending/completed lists don't grow the box
+  const scrollBoxStyle = {
+    maxHeight: 320,         // tweak if you want taller/shorter
+    overflowY: "auto",
+  };
+
   const load = async ()=>{
     // fetch course (active+archived so deep links always work)
     const active = await api.get("/courses?status=active");
@@ -142,52 +148,62 @@ export default function CourseDetail(){
 
   /* ----------------------------- tables/tabs ----------------------------- */
   const PendingTable = (
-    isEmpty(pending) ? <Empty icon="⏳" title="No pending classes"/> :
-    <Table
-      columns={[
-        {key:"name",label:"Class"},
-        {key:"teacherName",label:"Teacher"},
-        {key:"teacherTpin",label:"TPIN"},
-        {key:"hours",label:"Hours"},
-        ...(isAdmin ? [{key:"hourlyRate",label:"Rate/hr"}] : []),
-        {key:"_actions",label:"Actions"}
-      ]}
-      rows={pending}
-      renderCell={(c,row)=>{
-        if(c.key==="_actions"){
-          return (
-            <div className="row" style={rowStyle}>
-              <Button variant="ghost" onClick={()=>markComplete(row._id)}>Complete</Button>
-              {isAdmin && <Button variant="ghost" onClick={()=>removePending(row._id)}>Delete</Button>}
-            </div>
-          );
-        }
-        if (c.key === "name") return row.name || <span className="subtle">—</span>;
-        return row[c.key];
-      }}
-    />
+    isEmpty(pending) ? (
+      <Empty icon="⏳" title="No pending classes"/>
+    ) : (
+      <div style={scrollBoxStyle}>
+        <Table
+          columns={[
+            {key:"name",label:"Class"},
+            {key:"teacherName",label:"Teacher"},
+            {key:"teacherTpin",label:"TPIN"},
+            {key:"hours",label:"Hours"},
+            ...(isAdmin ? [{key:"hourlyRate",label:"Rate/hr"}] : []),
+            {key:"_actions",label:"Actions"}
+          ]}
+          rows={pending}
+          renderCell={(c,row)=>{
+            if(c.key==="_actions"){
+              return (
+                <div className="row" style={rowStyle}>
+                  <Button variant="ghost" onClick={()=>markComplete(row._id)}>Complete</Button>
+                  {isAdmin && <Button variant="ghost" onClick={()=>removePending(row._id)}>Delete</Button>}
+                </div>
+              );
+            }
+            if (c.key === "name") return row.name || <span className="subtle">—</span>;
+            return row[c.key];
+          }}
+        />
+      </div>
+    )
   );
 
   const CompletedTable = (
-    isEmpty(completed) ? <Empty icon="✅" title="No completed classes"/> :
-    <Table
-      columns={[
-        {key:"name",label:"Class"},
-        {key:"teacherName",label:"Teacher"},
-        {key:"teacherTpin",label:"TPIN"},
-        {key:"hours",label:"Hours"},
-        ...(isAdmin ? [{key:"hourlyRate",label:"Rate/hr"}] : []),
-        {key:"confirmedAt",label:"Confirmed At"},
-        {key:"paid",label:"Paid"}
-      ]}
-      rows={completed}
-      renderCell={(c,row)=>{
-        if(c.key==="confirmedAt") return row.confirmedAt ? new Date(row.confirmedAt).toLocaleString() : "-";
-        if(c.key==="paid") return row.paid ? <span className="badge ok">Paid</span> : <span className="badge warn">Unpaid</span>;
-        if (c.key === "name") return row.name || <span className="subtle">—</span>;
-        return row[c.key];
-      }}
-    />
+    isEmpty(completed) ? (
+      <Empty icon="✅" title="No completed classes"/>
+    ) : (
+      <div style={scrollBoxStyle}>
+        <Table
+          columns={[
+            {key:"name",label:"Class"},
+            {key:"teacherName",label:"Teacher"},
+            {key:"teacherTpin",label:"TPIN"},
+            {key:"hours",label:"Hours"},
+            ...(isAdmin ? [{key:"hourlyRate",label:"Rate/hr"}] : []),
+            {key:"confirmedAt",label:"Confirmed At"},
+            {key:"paid",label:"Paid"}
+          ]}
+          rows={completed}
+          renderCell={(c,row)=>{
+            if(c.key==="confirmedAt") return row.confirmedAt ? new Date(row.confirmedAt).toLocaleString() : "-";
+            if(c.key==="paid") return row.paid ? <span className="badge ok">Paid</span> : <span className="badge warn">Unpaid</span>;
+            if (c.key === "name") return row.name || <span className="subtle">—</span>;
+            return row[c.key];
+          }}
+        />
+      </div>
+    )
   );
 
   /* -------------------------------- view -------------------------------- */
