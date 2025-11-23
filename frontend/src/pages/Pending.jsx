@@ -61,6 +61,20 @@ export default function Pending() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 🔒 Lock window scroll while this page is mounted
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
+
   const complete = async (id) => {
     if (isEditor) return; // safety
     setLoading(true);
@@ -182,7 +196,16 @@ export default function Pending() {
   const dialogSession = uploadDialog.task?.classSession || {};
 
   return (
-    <div className="page page-pending">
+    <div
+      className="page page-pending"
+      style={{
+        height: "100vh",
+        maxHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       <PageHeader
         // icon="/bigbang.svg"
         title={headerTitle}
@@ -193,77 +216,83 @@ export default function Pending() {
         {/* reserved for future quick filters */}
       </Toolbar>
 
-      <Section>
-        {rows.length === 0 ? (
-          <Empty
-            icon="⏳"
-            title={loading ? "Loading..." : emptyTitle}
-          />
-        ) : (
-          <Table
-            columns={columns}
-            rows={rows}
-            renderCell={(c, row) => {
-              // Editor mode: data is UploadedVideo with populated classSession
-              if (isEditor) {
-                const session = row.classSession || {};
-                if (c.key === "course") return session.course?.name || "-";
+      {/* Scrollable main content area (fixed height within the viewport) */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+        }}
+      >
+        <Section>
+          {rows.length === 0 ? (
+            <Empty icon="⏳" title={loading ? "Loading..." : emptyTitle} />
+          ) : (
+            <Table
+              columns={columns}
+              rows={rows}
+              renderCell={(c, row) => {
+                // Editor mode: data is UploadedVideo with populated classSession
+                if (isEditor) {
+                  const session = row.classSession || {};
+                  if (c.key === "course") return session.course?.name || "-";
+                  if (c.key === "name")
+                    return session.name || (
+                      <span className="subtle">—</span>
+                    );
+                  if (c.key === "teacherName")
+                    return session.teacher?.name || "-";
+                  if (c.key === "teacherTpin")
+                    return session.teacher?.tpin || "-";
+                  if (c.key === "hours") return session.hours ?? "-";
+                  if (c.key === "_actions") {
+                    return (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <Button
+                          variant="ghost"
+                          disabled={loading}
+                          onClick={() => markUploaded(row)}
+                        >
+                          Mark uploaded
+                        </Button>
+                      </div>
+                    );
+                  }
+                  return null;
+                }
+
+                // Existing behavior for admin/teacher
+                if (c.key === "course") return row.course?.name || "-";
                 if (c.key === "name")
-                  return (
-                    session.name || <span className="subtle">—</span>
-                  );
-                if (c.key === "teacherName")
-                  return session.teacher?.name || "-";
-                if (c.key === "teacherTpin")
-                  return session.teacher?.tpin || "-";
-                if (c.key === "hours") return session.hours ?? "-";
+                  return row.name || <span className="subtle">—</span>;
                 if (c.key === "_actions") {
                   return (
                     <div style={{ display: "flex", gap: 8 }}>
                       <Button
                         variant="ghost"
                         disabled={loading}
-                        onClick={() => markUploaded(row)}
+                        onClick={() => complete(row._id)}
                       >
-                        Mark uploaded
+                        Complete
                       </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          disabled={loading}
+                          onClick={() => remove(row._id)}
+                        >
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   );
                 }
-                return null;
-              }
-
-              // Existing behavior for admin/teacher
-              if (c.key === "course") return row.course?.name || "-";
-              if (c.key === "name")
-                return row.name || <span className="subtle">—</span>;
-              if (c.key === "_actions") {
-                return (
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <Button
-                      variant="ghost"
-                      disabled={loading}
-                      onClick={() => complete(row._id)}
-                    >
-                      Complete
-                    </Button>
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        disabled={loading}
-                        onClick={() => remove(row._id)}
-                      >
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                );
-              }
-              return row[c.key];
-            }}
-          />
-        )}
-      </Section>
+                return row[c.key];
+              }}
+            />
+          )}
+        </Section>
+      </div>
 
       {/* -------------------- Upload URL Dialog (Editor) -------------------- */}
       {isEditor && uploadDialog.open && (
@@ -436,10 +465,7 @@ export default function Pending() {
               >
                 Cancel
               </Button>
-              <Button
-                onClick={submitUploadDialog}
-                disabled={loading}
-              >
+              <Button onClick={submitUploadDialog} disabled={loading}>
                 {loading ? "Saving…" : "Mark Uploaded"}
               </Button>
             </div>

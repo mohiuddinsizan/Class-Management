@@ -1,1 +1,29 @@
-.page-pending{display:grid; gap: var(--s-8)}
+.page-pending {
+  display: grid;
+  gap: var(--s-8);
+  /* 3 rows: header, toolbar, content */
+  grid-template-rows: auto auto minmax(0, 1fr);
+  height: 100vh;        /* lock to viewport */
+  overflow: hidden;     /* prevent page scroll */
+}
+
+/* content row */
+.page-pending .pending-content {
+  min-height: 0;        /* allow grid row to shrink and scroll */
+  overflow: hidden;
+}
+
+/* table scrolls inside the content */
+.page-pending .pending-table-wrapper {
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* sticky table header */
+.page-pending .pending-table-wrapper table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: #020617; /* match your page bg */
+}

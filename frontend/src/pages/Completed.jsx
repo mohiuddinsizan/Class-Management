@@ -111,7 +111,7 @@ export default function Completed() {
     }
   };
 
-  // If Start == End → that day; else if only Start → that day; else default today
+  // For label only; we won't use this to filter anymore
   const billDay = useMemo(() => {
     if (filters.start && filters.end && filters.start === filters.end)
       return filters.start;
@@ -119,11 +119,11 @@ export default function Completed() {
     return today;
   }, [filters.start, filters.end]);
 
+  // 🔧 SIMPLE VERSION: bill rows = whatever is in the current class table
   const rowsForBill = useMemo(() => {
     if (!isAdmin) return [];
-    const day = billDay;
-    return classRows.filter((r) => onlyDate(r.confirmedAt) === day);
-  }, [classRows, billDay, isAdmin]);
+    return classRows || [];
+  }, [classRows, isAdmin]);
 
   // Try bulk; else patch individually (like Unpaid.jsx)
   const markBillAsPaid = async (ids) => {
@@ -184,7 +184,7 @@ export default function Completed() {
           <td>${i + 1}</td>
           <td>${escapeHtml(it.course?.name || "-")}</td>
           <td>${escapeHtml(it.name || "—")}</td>
-          <td>${escapeHtml(fmtDate(it.confirmedAt))}</td>
+          <td>${escapeHtml(fmtDate(it.confirmedAt || it.completedAt))}</td>
           <td class="num">${it.hours ?? "-"}</td>
           <td class="num">${money(it.hourlyRate ?? 0)}</td>
           <td class="num">${money(amt)}</td>
@@ -335,7 +335,7 @@ export default function Completed() {
   const onDownloadBill = async () => {
     const list = rowsForBill;
     if (!list || list.length === 0) {
-      alert("No completed classes for the selected date.");
+      alert("No completed classes in the current list.");
       return;
     }
     setDownloadingClasses(true);
@@ -480,7 +480,7 @@ export default function Completed() {
             <span class="meta-dot"></span>
             <span>Media & Editing</span>
           </div>
-          <div><b>Period:</b> ${periodLabel}</div>
+          <div><b>Period:</b> ${formatUploadPeriod()}</div>
           <div><b>Generated:</b> ${new Date().toLocaleString()}</div>
           <div><b>Invoice ID:</b> ${invoiceId}</div>
         </div>
@@ -670,7 +670,7 @@ export default function Completed() {
       <Button
         onClick={onDownloadBill}
         disabled={
-          loading || downloadingClasses || rowsForBill.length === 0
+          loading || downloadingClasses || classRows.length === 0
         }
       >
         {downloadingClasses ? "Processing…" : "Mark Paid & Download Bill"}
