@@ -6,6 +6,7 @@ import Toolbar from "../components/Toolbar";
 import Section from "../components/Section";
 import Table from "../components/Table";
 import Button from "../components/Button";
+import Field from "../components/Field";
 import Empty from "../components/Empty";
 import "../styles/pages/pending.css";
 
@@ -21,6 +22,15 @@ export default function Pending() {
     error: "",
   });
 
+  // Filters + lookup lists (no date filters per request)
+  const [filters, setFilters] = useState({
+    courseId: "",
+    teacherId: "",
+    tpin: "",
+  });
+  const [courses, setCourses] = useState([]);
+  const [people, setPeople] = useState([]); // teachers + admins
+
   const user = useMemo(
     () => JSON.parse(localStorage.getItem("user") || "null"),
     []
@@ -30,20 +40,27 @@ export default function Pending() {
   const isEditor = user?.role === "editor";
   const isTeacher = user?.role === "teacher";
 
-  const load = async () => {
+  const buildQueryParams = (obj) =>
+    new URLSearchParams(
+      Object.entries(obj).filter(([_, v]) => v !== "" && v != null)
+    ).toString();
+
+  const load = async (opts = {}) => {
     setLoading(true);
     try {
       if (isEditor) {
-        // Editor: load pending upload tasks
+        // Editor: load pending upload tasks (we'll client-filter by course/teacher/tpin)
         const { data } = await api.get("/upload/pending");
         setRows(data || []);
       } else {
-        // Admin/Teacher: existing pending class flow
-        const { data } = await api.get("/classes/pending");
+        // Admin/Teacher: request pending classes from server and pass filters as query params
+        const params = buildQueryParams(opts.filters || filters);
+        const url = params ? `/classes/pending?${params}` : "/classes/pending";
+        const { data } = await api.get(url);
         // Client-side guard: teachers only see their own items
         const filtered = isAdmin
           ? data
-          : data.filter(
+          : (data || []).filter(
               (x) =>
                 String(x.teacherId || x.teacher?._id || "") ===
                   String(user?._id || "") ||
@@ -51,12 +68,30 @@ export default function Pending() {
             );
         setRows(filtered);
       }
+    } catch (err) {
+      console.error("Failed to load pending items", err);
+      setRows([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // preload courses and people if admin/editor (for filter dropdowns)
+    if (isAdmin || isEditor) {
+      api
+        .get("/courses?status=active")
+        .then((r) => setCourses(r.data || []))
+        .catch(() => setCourses([]));
+
+      Promise.all([
+        api.get("/users", { params: { role: "teacher" } }),
+        api.get("/users", { params: { role: "admin" } }),
+      ])
+        .then(([t, a]) => setPeople([...(t.data || []), ...(a.data || [])]))
+        .catch(() => setPeople([]));
+    }
+
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -130,7 +165,6 @@ export default function Pending() {
       return;
     }
 
-    // You can add simple URL sanity check if you want
     const looksLikeUrl = /^https?:\/\/.+/i.test(url);
     if (!looksLikeUrl) {
       setUploadDialog((s) => ({
@@ -160,7 +194,49 @@ export default function Pending() {
     openUploadDialog(task);
   };
 
-  // Table columns
+  /* ----------------------------- FILTER HELPERS ----------------------------- */
+
+  const resetFilters = () => {
+    const base = { courseId: "", teacherId: "", tpin: "" };
+    setFilters(base);
+    // For admin, reload from server without query params
+    load({ filters: base });
+  };
+
+  // For editor we will client-filter pending uploads by selected filters (no dates)
+  const filteredEditorRows = useMemo(() => {
+    if (!isEditor) return rows;
+    const { courseId, teacherId, tpin } = filters;
+    return (rows || []).filter((row) => {
+      const session = row.classSession || {};
+      if (courseId) {
+        const sessionCourseId =
+          session.course?._id || session.courseId || session.course || "";
+        if (String(sessionCourseId) !== String(courseId)) return false;
+      }
+      if (teacherId) {
+        const sessionTeacherId =
+          session.teacher?._id || session.teacherId || session.teacher || "";
+        if (String(sessionTeacherId) !== String(teacherId)) return false;
+      }
+      if (tpin) {
+        const sessionTpin =
+          session.teacher?.tpin ||
+          row.teacherTpin ||
+          row.teacherTpin ||
+          session.tpin ||
+          "";
+        if (!String(sessionTpin).includes(String(tpin))) return false;
+      }
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, filters, isEditor]);
+
+  const displayRows = isEditor ? filteredEditorRows : rows;
+
+  /* ----------------------------- COLUMNS ----------------------------- */
+
   const classColumns = [
     { key: "name", label: "Class" },
     { key: "course", label: "Course" },
@@ -171,7 +247,6 @@ export default function Pending() {
     { key: "_actions", label: "Actions" },
   ];
 
-  // Editor view: based on UploadedVideo + populated classSession
   const editorColumns = [
     { key: "name", label: "Class" },
     { key: "course", label: "Course" },
@@ -195,6 +270,8 @@ export default function Pending() {
   // Helper to show info in dialog
   const dialogSession = uploadDialog.task?.classSession || {};
 
+  /* ----------------------------- RENDER ----------------------------- */
+
   return (
     <div
       className="page page-pending"
@@ -209,14 +286,72 @@ export default function Pending() {
       <PageHeader
         // icon="/bigbang.svg"
         title={headerTitle}
-        meta={<div className="badge">Total: {rows.length}</div>}
+        meta={<div className="badge">Total: {displayRows.length}</div>}
       />
 
-      <Toolbar right={<div className="badge">{toolbarText}</div>}>
-        {/* reserved for future quick filters */}
+      <Toolbar
+        right={
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div className="badge">{toolbarText}</div>
+            <Button variant="ghost" onClick={resetFilters} disabled={loading}>
+              Reset Filters
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => load({ filters })}
+              disabled={loading}
+            >
+              Apply Filters
+            </Button>
+          </div>
+        }
+      >
+        <div className="filters-grid">
+          <Field label="Course">
+            <select
+              value={filters.courseId}
+              onChange={(e) =>
+                setFilters((s) => ({ ...s, courseId: e.target.value }))
+              }
+            >
+              <option value="">All</option>
+              {courses.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Teacher/Admin">
+            <select
+              value={filters.teacherId}
+              onChange={(e) =>
+                setFilters((s) => ({ ...s, teacherId: e.target.value }))
+              }
+            >
+              <option value="">All</option>
+              {people.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.name} ({p.role})
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="TPIN">
+            <input
+              value={filters.tpin}
+              onChange={(e) =>
+                setFilters((s) => ({ ...s, tpin: e.target.value }))
+              }
+              placeholder="Optional"
+            />
+          </Field>
+        </div>
       </Toolbar>
 
-      {/* Scrollable main content area (fixed height within the viewport) */}
+      {/* Scrollable main content area */}
       <div
         style={{
           flex: 1,
@@ -225,23 +360,20 @@ export default function Pending() {
         }}
       >
         <Section>
-          {rows.length === 0 ? (
+          {displayRows.length === 0 ? (
             <Empty icon="⏳" title={loading ? "Loading..." : emptyTitle} />
           ) : (
             <Table
               columns={columns}
-              rows={rows}
+              rows={displayRows}
               renderCell={(c, row) => {
                 // Editor mode: data is UploadedVideo with populated classSession
                 if (isEditor) {
                   const session = row.classSession || {};
                   if (c.key === "course") return session.course?.name || "-";
                   if (c.key === "name")
-                    return session.name || (
-                      <span className="subtle">—</span>
-                    );
-                  if (c.key === "teacherName")
-                    return session.teacher?.name || "-";
+                    return session.name || <span className="subtle">—</span>;
+                  if (c.key === "teacherName") return session.teacher?.name || "-";
                   if (c.key === "teacherTpin")
                     return session.teacher?.tpin || "-";
                   if (c.key === "hours") return session.hours ?? "-";
@@ -261,7 +393,7 @@ export default function Pending() {
                   return null;
                 }
 
-                // Existing behavior for admin/teacher
+                // Admin/Teacher view
                 if (c.key === "course") return row.course?.name || "-";
                 if (c.key === "name")
                   return row.name || <span className="subtle">—</span>;
