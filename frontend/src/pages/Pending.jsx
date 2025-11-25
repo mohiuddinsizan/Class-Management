@@ -6,12 +6,12 @@ import Toolbar from "../components/Toolbar";
 import Section from "../components/Section";
 import Table from "../components/Table";
 import Button from "../components/Button";
-import Field from "../components/Field";
+import { Field } from "../components/Field";
 import Empty from "../components/Empty";
 import "../styles/pages/pending.css";
 
 export default function Pending() {
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState([]); // raw rows from server
   const [loading, setLoading] = useState(false);
 
   // Editor upload dialog state
@@ -22,7 +22,7 @@ export default function Pending() {
     error: "",
   });
 
-  // Filters + lookup lists (no date filters per request)
+  // Filters + lookup lists (no date filters)
   const [filters, setFilters] = useState({
     courseId: "",
     teacherId: "",
@@ -45,28 +45,77 @@ export default function Pending() {
       Object.entries(obj).filter(([_, v]) => v !== "" && v != null)
     ).toString();
 
+  // Client-side filter function used for both admin/teacher and editor views
+  const applyClientFilters = (items, currentFilters) => {
+    const { courseId, teacherId, tpin } = currentFilters || filters;
+    return (items || []).filter((row) => {
+      // Determine session/course/teacher fields for both class rows and upload rows
+      const session =
+        row.classSession ||
+        row.session ||
+        row.class ||
+        (typeof row.course === "object" ? row : {});
+      // course id possibilities
+      const sessionCourseId =
+        (session && (session.course?._id || session.courseId || session.course)) ||
+        row.course?._id ||
+        row.courseId ||
+        row.course ||
+        "";
+      if (courseId && String(sessionCourseId) !== String(courseId)) return false;
+
+      // teacher id possibilities
+      const sessionTeacherId =
+        (session && (session.teacher?._id || session.teacherId || session.teacher)) ||
+        row.teacherId ||
+        (row.teacher && row.teacher._id) ||
+        "";
+      if (teacherId && String(sessionTeacherId) !== String(teacherId))
+        return false;
+
+      // tpin possibilities (partial match)
+      if (tpin) {
+        const sessionTpin =
+          (session && (session.teacher?.tpin || session.tpin)) ||
+          row.teacherTpin ||
+          row.tpin ||
+          "";
+        if (!String(sessionTpin).includes(String(tpin))) return false;
+      }
+
+      // For teacher role, additionally restrict to current user
+      if (isTeacher && !isAdmin && !isEditor) {
+        const ownerTeacherId =
+          row.teacherId || (row.teacher && row.teacher._id) || "";
+        const ownerTpin = row.teacherTpin || (row.teacher && row.teacher.tpin) || "";
+        if (
+          String(ownerTeacherId) !== String(user?._id || "") &&
+          String(ownerTpin) !== String(user?.tpin || "")
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  // Load raw rows from server, then apply client-side filters always
   const load = async (opts = {}) => {
     setLoading(true);
     try {
       if (isEditor) {
-        // Editor: load pending upload tasks (we'll client-filter by course/teacher/tpin)
+        // Editor: fetch pending uploads (server-side may return all); we'll client-filter below
         const { data } = await api.get("/upload/pending");
-        setRows(data || []);
+        const list = data || [];
+        setRows(list);
       } else {
-        // Admin/Teacher: request pending classes from server and pass filters as query params
+        // Admin/Teacher: ask server (may ignore params) but still apply client-side filters
         const params = buildQueryParams(opts.filters || filters);
         const url = params ? `/classes/pending?${params}` : "/classes/pending";
         const { data } = await api.get(url);
-        // Client-side guard: teachers only see their own items
-        const filtered = isAdmin
-          ? data
-          : (data || []).filter(
-              (x) =>
-                String(x.teacherId || x.teacher?._id || "") ===
-                  String(user?._id || "") ||
-                String(x.teacherTpin || "") === String(user?.tpin || "")
-            );
-        setRows(filtered);
+        const list = data || [];
+        setRows(list);
       }
     } catch (err) {
       console.error("Failed to load pending items", err);
@@ -199,41 +248,15 @@ export default function Pending() {
   const resetFilters = () => {
     const base = { courseId: "", teacherId: "", tpin: "" };
     setFilters(base);
-    // For admin, reload from server without query params
+    // reload raw rows and client-filter will use empty filters
     load({ filters: base });
   };
 
-  // For editor we will client-filter pending uploads by selected filters (no dates)
-  const filteredEditorRows = useMemo(() => {
-    if (!isEditor) return rows;
-    const { courseId, teacherId, tpin } = filters;
-    return (rows || []).filter((row) => {
-      const session = row.classSession || {};
-      if (courseId) {
-        const sessionCourseId =
-          session.course?._id || session.courseId || session.course || "";
-        if (String(sessionCourseId) !== String(courseId)) return false;
-      }
-      if (teacherId) {
-        const sessionTeacherId =
-          session.teacher?._id || session.teacherId || session.teacher || "";
-        if (String(sessionTeacherId) !== String(teacherId)) return false;
-      }
-      if (tpin) {
-        const sessionTpin =
-          session.teacher?.tpin ||
-          row.teacherTpin ||
-          row.teacherTpin ||
-          session.tpin ||
-          "";
-        if (!String(sessionTpin).includes(String(tpin))) return false;
-      }
-      return true;
-    });
+  // Display rows are always rows filtered by current filters
+  const displayRows = useMemo(() => {
+    return applyClientFilters(rows, filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, filters, isEditor]);
-
-  const displayRows = isEditor ? filteredEditorRows : rows;
+  }, [rows, filters, isAdmin, isEditor, isTeacher, user]);
 
   /* ----------------------------- COLUMNS ----------------------------- */
 
@@ -373,7 +396,8 @@ export default function Pending() {
                   if (c.key === "course") return session.course?.name || "-";
                   if (c.key === "name")
                     return session.name || <span className="subtle">—</span>;
-                  if (c.key === "teacherName") return session.teacher?.name || "-";
+                  if (c.key === "teacherName")
+                    return session.teacher?.name || "-";
                   if (c.key === "teacherTpin")
                     return session.teacher?.tpin || "-";
                   if (c.key === "hours") return session.hours ?? "-";
