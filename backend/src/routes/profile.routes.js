@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { auth, isAdmin } from "../middleware/auth.js";
 import { ClassSession } from "../models/ClassSession.js";
-import { UploadedVideo } from "../models/UploadedVideo.js";   // ⬅️ NEW
+import { UploadedVideo } from "../models/UploadedVideo.js";
 import { User } from "../models/User.js";
 import { RatingLog } from "../models/RatingLog.js";
 
@@ -43,22 +43,25 @@ router.get("/me", auth, async (req, res) => {
 
   const { summary, history } = await getRatingForTpin(user.tpin);
 
+  // statuses that count as "completed" for payout
+  const teachingStatuses = ["teacherCompleted", "adminConfirmed"];
+
   // ===========================================================
-  // ROLE: TEACHER  (existing logic stays the same)
+  // ROLE: TEACHER or ADMIN — both can take classes
   // ===========================================================
-  if (role === "teacher") {
-    const myConfirmed = await ClassSession.find({
+  if (role === "teacher" || role === "admin") {
+    const myCompleted = await ClassSession.find({
       teacher: req.user.id,
-      status: "adminConfirmed",
+      status: { $in: teachingStatuses },
     }).lean();
 
     const unpaid = await ClassSession.find({
       teacher: req.user.id,
-      status: "adminConfirmed",
+      status: { $in: teachingStatuses },
       paid: false,
     }).lean();
 
-    const totalCompleted = myConfirmed.length;
+    const totalCompleted = myCompleted.length;
     const remainingBalance = unpaid.reduce(
       (sum, c) => sum + c.hours * c.hourlyRate,
       0
@@ -76,11 +79,19 @@ router.get("/me", auth, async (req, res) => {
   }
 
   // ===========================================================
-  // ROLE: EDITOR  (NEW PROFILE LOGIC)
+  // ROLE: EDITOR  (PROFILE LOGIC)
   // ===========================================================
   if (role === "editor") {
+    // ✅ Count uploaded tasks:
+    //  - uploaded:true
+    //  - editor = this user (new correct data)
+    //  - OR editor is null (old records before the bug fix)
     const uploads = await UploadedVideo.find({
-      editor: req.user.id,
+      uploaded: true,
+      $or: [
+        { editor: user._id },   // new, correct ones
+        { editor: null },       // old ones created before fix
+      ],
     }).lean();
 
     const approved = uploads.filter((u) => u.status === "adminApproved");
@@ -89,7 +100,7 @@ router.get("/me", auth, async (req, res) => {
       (u) => u.status === "adminApproved" && u.paid === false
     );
 
-    const remainingBalance = unpaid.reduce((sum, u) => sum + u.rate, 0);
+    const remainingBalance = unpaid.reduce((sum, u) => sum + (u.rate || 0), 0);
 
     return res.json({
       id: user._id,
@@ -107,7 +118,7 @@ router.get("/me", auth, async (req, res) => {
   }
 
   // ===========================================================
-  // ROLE: ADMIN — show basic info only
+  // any other role — basic info only
   // ===========================================================
   return res.json({
     id: user._id,
@@ -153,21 +164,28 @@ router.get("/:id", auth, isAdmin, async (req, res) => {
   // ======================
   if (role === "editor") {
     const uploads = await UploadedVideo.find({
-      editor: user._id,
+      uploaded: true,
+      $or: [
+        { editor: user._id },
+        { editor: null },
+      ],
     }).lean();
 
     const unpaid = uploads.filter(
       (u) => u.status === "adminApproved" && u.paid === false
     );
 
-    const remainingBalance = unpaid.reduce((sum, u) => sum + u.rate, 0);
+    const remainingBalance = unpaid.reduce((sum, u) => sum + (u.rate || 0), 0);
 
     return res.json({
       user,
       role,
       totals: {
         totalUploaded: uploads.length,
-        totalApproved: uploads.filter((u) => u.status === "adminApproved").length,
+        totalApproved: uploads.filter(
+          (u) => u.status === "adminApproved"
+        ).length,
+        remainingBalance,
       },
       remainingBalance,
       ratingSummary: summary,

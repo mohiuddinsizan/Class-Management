@@ -26,10 +26,6 @@ function isEditorOrAdmin(req, res, next) {
  * Optional helper (admin-only)
  * Create UploadedVideo docs for all adminConfirmed sessions
  * that don't yet have an upload-task.
- *
- * You don't HAVE to call this if you create UploadedVideo in
- * the /:id/confirm route of class.routes, but it's
- * nice as a fixer if something gets out of sync.
  */
 router.post("/sync-from-sessions", auth, isAdmin, async (_req, res, next) => {
   try {
@@ -66,12 +62,6 @@ router.post("/sync-from-sessions", auth, isAdmin, async (_req, res, next) => {
 });
 
 /* --------------------------- PENDING UPLOADS ------------------------ */
-/**
- * GET /upload/pending
- * - Admin: see all not-yet-uploaded tasks
- * - Editor: see all not-yet-uploaded tasks as well
- *   (if you later add per-editor assignment, you can filter by editor here)
- */
 router.get("/pending", auth, isEditorOrAdmin, async (req, res, next) => {
   try {
     const filter = { uploaded: false };
@@ -93,11 +83,6 @@ router.get("/pending", auth, isEditorOrAdmin, async (req, res, next) => {
 });
 
 /* --------------------------- UPLOADED LIST -------------------------- */
-/**
- * GET /upload/uploaded
- * - Admin: see all uploaded
- * - Editor: see all uploaded as well (optional, can be limited to admin)
- */
 router.get("/uploaded", auth, isEditorOrAdmin, async (req, res, next) => {
   try {
     const filter = { uploaded: true };
@@ -134,9 +119,9 @@ router.patch("/:id/uploaded", auth, isEditorOrAdmin, async (req, res, next) => {
     if (videoUrl) task.videoUrl = String(videoUrl).trim();
     task.uploadedAt = new Date();
 
-    // If an editor is doing this, record them as the editor
+    // ✅ FIX: use req.user.id, not req.user._id
     if (req.user.role === "editor") {
-      task.editor = req.user._id;
+      task.editor = req.user.id; // this will be cast to ObjectId
     }
 
     await task.save();
@@ -168,10 +153,6 @@ router.patch("/:id/unuploaded", auth, isEditorOrAdmin, async (req, res, next) =>
 });
 
 /* ----------------------------- CLEANUP ------------------------------ */
-/**
- * (Optional) Admin-only delete of upload tasks.
- * This does NOT delete the underlying ClassSession.
- */
 router.delete("/:id", auth, isAdmin, async (req, res, next) => {
   try {
     const task = await UploadedVideo.findById(req.params.id);
