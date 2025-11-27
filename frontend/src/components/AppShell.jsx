@@ -1,6 +1,9 @@
 // src/components/AppShell.jsx
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+// src/components/AppShell.jsx
+
+
 
 /* ---------- tiny inline icon set (no external deps) ---------- */
 function Icon({ name, size = 18 }) {
@@ -163,6 +166,8 @@ function NavItem({ to, label, icon, onNavigate }) {
   );
 }
 
+/* ... icons + NavItem unchanged ... */
+
 export default function AppShell({ children, onLogout }) {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const isAdmin = user?.role === "admin";
@@ -247,6 +252,12 @@ export default function AppShell({ children, onLogout }) {
         id="mobile-drawer"
         className={`sidebar ${open ? "open" : ""}`}
         aria-hidden={!open}
+        // 🔥 Make the sidebar scrollable so all items (incl. Logout) are reachable on mobile
+        style={{
+          maxHeight: "100vh",
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         <div className="brand desktop-only">
           <img src="/bigbang.png" alt="" /> BIG BANG
@@ -296,14 +307,12 @@ export default function AppShell({ children, onLogout }) {
               icon="reports"
               onNavigate={onNavigate}
             />
-            {/* Ratings page for admin */}
             <NavItem
               to="/ratings"
               label="Ratings"
               icon="star"
               onNavigate={onNavigate}
             />
-            {/* NEW: Tours (admin only) */}
             <NavItem
               to="/tours"
               label="Tours"
@@ -355,7 +364,6 @@ export default function AppShell({ children, onLogout }) {
           onNavigate={onNavigate}
         />
 
-        {/* Footer for user + logout */}
         {user && (
           <div style={{ marginTop: "auto" }}>
             <div
