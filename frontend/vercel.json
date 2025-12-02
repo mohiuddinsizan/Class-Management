@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://class-management-api.onrender.com/api/$1"
+      "destination": "https://kgcaj9fgk0.execute-api.ap-south-1.amazonaws.com/dev/api/$1"
     },
     {
       "source": "/((?!api|assets|.*\\..*).*)",
