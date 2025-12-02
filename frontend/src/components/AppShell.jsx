@@ -131,7 +131,7 @@ function Icon({ name, size = 18 }) {
           <line x1="3" y1="17" x2="5" y2="17" />
         </svg>
       );
-      case "suitcase": // NEW: Tours icon (distinct from Free Days calendar)
+    case "suitcase": // Tours icon
       return (
         <svg {...common}>
           <rect x="3" y="7" width="18" height="13" rx="2" />
@@ -248,128 +248,140 @@ export default function AppShell({ children, onLogout }) {
         className={`sidebar ${open ? "open" : ""}`}
         aria-hidden={!open}
       >
-        <div className="brand desktop-only">
-          <img src="/bigbang.png" alt="" /> BIG BANG
-        </div>
+        {/* ✅ Scrollable inner container so all items (incl. Logout) are reachable on mobile */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "100vh",
+            maxHeight: "100vh",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <div className="brand desktop-only">
+            <img src="/bigbang.png" alt="" /> BIG BANG
+          </div>
 
-        {isAdmin && (
-          <>
-            <NavItem
-              to="/home"
-              label="Home"
-              icon="home"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/courses/new"
-              label="New Course"
-              icon="plus"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/confirmation"
-              label="Confirmation"
-              icon="confirm"
-              onNavigate={onNavigate}
-            />
+          {isAdmin && (
+            <>
+              <NavItem
+                to="/home"
+                label="Home"
+                icon="home"
+                onNavigate={onNavigate}
+              />
+              <NavItem
+                to="/courses/new"
+                label="New Course"
+                icon="plus"
+                onNavigate={onNavigate}
+              />
+              <NavItem
+                to="/confirmation"
+                label="Confirmation"
+                icon="confirm"
+                onNavigate={onNavigate}
+              />
+              <NavItem
+                to="/completed"
+                label="Completed"
+                icon="completed"
+                onNavigate={onNavigate}
+              />
+              <NavItem
+                to="/unpaid"
+                label="Unpaid"
+                icon="money"
+                onNavigate={onNavigate}
+              />
+              <NavItem
+                to="/users"
+                label="Users"
+                icon="users"
+                onNavigate={onNavigate}
+              />
+              <NavItem
+                to="/reports"
+                label="Reports"
+                icon="reports"
+                onNavigate={onNavigate}
+              />
+              {/* Ratings page for admin */}
+              <NavItem
+                to="/ratings"
+                label="Ratings"
+                icon="star"
+                onNavigate={onNavigate}
+              />
+              {/* Tours (admin only) */}
+              <NavItem
+                to="/tours"
+                label="Tours"
+                icon="suitcase"
+                onNavigate={onNavigate}
+              />
+            </>
+          )}
+
+          {/* Editor-specific: show Completed (uploaded videos) */}
+          {isEditor && (
             <NavItem
               to="/completed"
               label="Completed"
               icon="completed"
               onNavigate={onNavigate}
             />
-            <NavItem
-              to="/unpaid"
-              label="Unpaid"
-              icon="money"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/users"
-              label="Users"
-              icon="users"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/reports"
-              label="Reports"
-              icon="reports"
-              onNavigate={onNavigate}
-            />
-            {/* Ratings page for admin */}
-            <NavItem
-              to="/ratings"
-              label="Ratings"
-              icon="star"
-              onNavigate={onNavigate}
-            />
-            {/* NEW: Tours (admin only) */}
-            <NavItem
-              to="/tours"
-              label="Tours"
-              icon="suitcase"
-              onNavigate={onNavigate}
-            />
-          </>
-        )}
+          )}
 
-        {/* Editor-specific: show Completed (uploaded videos) */}
-        {isEditor && (
+          {/* Common (all roles) */}
           <NavItem
-            to="/completed"
-            label="Completed"
-            icon="completed"
+            to="/"
+            label="Pending"
+            icon="pending"
             onNavigate={onNavigate}
           />
-        )}
+          <NavItem
+            to="/free-days"
+            label="Free Days"
+            icon="calendar"
+            onNavigate={onNavigate}
+          />
+          <NavItem
+            to="/contacts"
+            label="Contact"
+            icon="contact"
+            onNavigate={onNavigate}
+          />
+          <NavItem
+            to="/profile"
+            label="Profile"
+            icon="profile"
+            onNavigate={onNavigate}
+          />
+          <NavItem
+            to="/password"
+            label="Password"
+            icon="lock"
+            onNavigate={onNavigate}
+          />
 
-        {/* Common (all roles) */}
-        <NavItem
-          to="/"
-          label="Pending"
-          icon="pending"
-          onNavigate={onNavigate}
-        />
-        <NavItem
-          to="/free-days"
-          label="Free Days"
-          icon="calendar"
-          onNavigate={onNavigate}
-        />
-        <NavItem
-          to="/contacts"
-          label="Contact"
-          icon="contact"
-          onNavigate={onNavigate}
-        />
-        <NavItem
-          to="/profile"
-          label="Profile"
-          icon="profile"
-          onNavigate={onNavigate}
-        />
-        <NavItem
-          to="/password"
-          label="Password"
-          icon="lock"
-          onNavigate={onNavigate}
-        />
-
-        {/* Footer for user + logout */}
-        {user && (
-          <div style={{ marginTop: "auto" }}>
-            <div
-              style={{
-                padding: "12px 12px 6px",
-                fontSize: 12,
-                opacity: 0.8,
-              }}
-            >
-              Signed in as <b>{user.name || user.email}</b>
+          {/* Footer for user + logout, pinned at bottom of scrollable column */}
+          {user && (
+            <div style={{ marginTop: "auto" }}>
+              <div
+                style={{
+                  padding: "12px 12px 6px",
+                  fontSize: 12,
+                  opacity: 0.8,
+                }}
+              >
+                Signed in as <b>{user.name || user.email}</b>
+              </div>
+              <LogoutItem />
             </div>
-            <LogoutItem />
-          </div>
-        )}
+          )}
+        </div>
       </aside>
 
       {/* Backdrop for drawer */}

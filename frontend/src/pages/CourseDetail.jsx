@@ -18,11 +18,13 @@ export default function CourseDetail(){
   const [course, setCourse] = useState(null);
   const [pending, setPending] = useState([]);
   const [completed, setCompleted] = useState([]);
+  const [uploaded, setUploaded] = useState([]); // ✅ new: uploaded videos for this course
   const [teachers, setTeachers] = useState([]); // teachers + admins
   const [assignErr, setAssignErr] = useState("");
 
   const user = useMemo(()=>JSON.parse(localStorage.getItem("user")||"null"),[]);
   const isAdmin = user?.role === "admin";
+  const isEditor = user?.role === "editor";
 
   // assign form
   const [className, setClassName] = useState("");       // session name
@@ -71,8 +73,9 @@ export default function CourseDetail(){
     // lists
     const p = await api.get("/classes/pending");
     setPending(p.data.filter(x=> String(x.course?._id||x.course) === String(id)));
+
     const c = await api.get(`/classes/completed?courseId=${id}`);
-    setCompleted(c.data);
+    setCompleted(c.data || []);
 
     // eligible assignees = teachers + admins
     if (isAdmin) {
@@ -82,8 +85,26 @@ export default function CourseDetail(){
       ]);
       setTeachers([...(t.data||[]), ...(a.data||[])]);
     }
+
+    // ✅ uploaded videos for THIS course (admin or editor)
+    if (isAdmin || isEditor) {
+      try {
+        const u = await api.get("/upload/uploaded");
+        const list = (u.data || []).filter((row) => {
+          const session = row.classSession || {};
+          const courseId = session.course?._id || session.course;
+          return String(courseId) === String(id);
+        });
+        setUploaded(list);
+      } catch {
+        setUploaded([]);
+      }
+    } else {
+      setUploaded([]);
+    }
   };
-  useEffect(()=>{ load(); },[id]);
+
+  useEffect(()=>{ load(); },[id]); // user role is from localStorage and stable
 
   useEffect(()=>{
     const sel = teachers.find(t=> String(t._id) === String(teacherId));
@@ -190,6 +211,51 @@ export default function CourseDetail(){
     />
   );
 
+  // ✅ New: Uploaded videos table (per-course)
+  const UploadedTable = (
+    isEmpty(uploaded) ? (
+      <Empty icon="🎬" title="No uploaded videos for this course" />
+    ) : (
+      <Table
+        columns={[
+          { key: "className", label: "Class" },
+          { key: "teacherName", label: "Teacher" },
+          { key: "teacherTpin", label: "TPIN" },
+          { key: "videoUrl", label: "Video Link" },
+          { key: "uploadedAt", label: "Uploaded At" },
+        ]}
+        rows={uploaded}
+        renderCell={(c, row) => {
+          const session = row.classSession || {};
+          if (c.key === "className")
+            return session.name || <span className="subtle">—</span>;
+          if (c.key === "teacherName")
+            return session.teacher?.name || "-";
+          if (c.key === "teacherTpin")
+            return session.teacher?.tpin || "-";
+          if (c.key === "videoUrl") {
+            if (!row.videoUrl)
+              return <span className="subtle">No link</span>;
+            return (
+              <a
+                href={row.videoUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Class Link
+              </a>
+            );
+          }
+          if (c.key === "uploadedAt")
+            return row.uploadedAt
+              ? new Date(row.uploadedAt).toLocaleString()
+              : "-";
+          return null;
+        }}
+      />
+    )
+  );
+
   /* -------------------------------- view -------------------------------- */
   const assignedNames = (course?.assignedTeachers || []).map(p=>p.name).join(", ");
   const assignedBadge = (course?.assignedTeachers?.length || 0) > 0
@@ -278,7 +344,8 @@ export default function CourseDetail(){
                 )
               },
               { label: "Pending", content: PendingTable },
-              { label: "Completed", content: CompletedTable }
+              { label: "Completed", content: CompletedTable },
+              { label: "Uploads", content: UploadedTable } // ✅ new tab
             ]}
           />
         </div>
@@ -412,10 +479,10 @@ export default function CourseDetail(){
                                   type="checkbox"
                                   checked={selected}
                                   onChange={()=>{
-                                    const has = edit.assignedTeachers.includes(t._id);
+                                    const has = (edit.assignedTeachers || []).includes(t._id);
                                     const next = has
                                       ? edit.assignedTeachers.filter(x=>x!==t._id)
-                                      : [...edit.assignedTeachers, t._id];
+                                      : [...(edit.assignedTeachers || []), t._id];
                                     setEdit(s=>({ ...s, assignedTeachers: next }));
                                   }}
                                   style={{ position:"absolute", opacity:0, pointerEvents:"none", width:0, height:0 }}
