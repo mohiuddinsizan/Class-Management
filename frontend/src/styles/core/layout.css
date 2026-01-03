@@ -3,34 +3,58 @@
 html, body, #root { height: 100%; width: 100%; overflow-x: hidden; }
 img, svg { max-width: 100%; height: auto; display: inline-block; }
 button, .btn { min-width: 0; } /* prevent flex children pushing width */
-.table, .content, .page { max-width: 100%; overflow-x: hidden; }
+.table, .content, .page { max-width: 100%;   overflow-y: auto; overflow-x: hidden;}
 
 /* ============ App layout (desktop) ============ */
 .layout{
   display:grid;
   grid-template-columns: 260px 1fr;
-  min-height: 100vh;
+  grid-template-rows: auto 1fr; /* 👈 appbar + content */
+  height: 100vh;
   width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
   background: radial-gradient(1200px 800px at -10% -10%, rgba(97, 78, 255, .12), transparent 60%),
               radial-gradient(1200px 800px at 110% 0%, rgba(0, 208, 255, .08), transparent 60%),
               #0b0f29;
 }
 
-/* Sidebar (desktop) */
+/* Sidebar (desktop)
 .sidebar{
   position: sticky;
   top: 0;
   height: 100vh;
   padding: 18px;
+  padding-bottom: 24px;
   border-right: 1px solid var(--border);
   background: #0e1334;
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  overflow-y: auto;
+  overflow-y: hidden;
+} */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+
+  height: 100vh;
+  box-sizing: border-box;
+
+  padding: 18px;
+  padding-bottom: 24px;
+
+  border-right: 1px solid var(--border);
+  background: #0e1334;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  overflow-y: auto;   /* ✅ CRITICAL CHANGE */
 }
+
 .brand{
   display:flex; align-items:center; gap:10px;
   font-weight: 800; letter-spacing: .5px; margin-bottom: 6px;
@@ -49,10 +73,10 @@ button, .btn { min-width: 0; } /* prevent flex children pushing width */
 .nav-text{ min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Content */
-.content{ padding: 22px; width: 100%; }
+.content{ padding: 22px; width: 100%;overflow-y: auto;  }
 
 /* ============ Mobile / Tablet ============ */
-.appbar{ display:none; }
+.appbar{ display:none; padding-top: 56px;}
 
 .backdrop{
   display:none;

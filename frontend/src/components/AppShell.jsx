@@ -255,8 +255,6 @@ export default function AppShell({ children, onLogout }) {
             flexDirection: "column",
             minHeight: "100vh",
             maxHeight: "100vh",
-            overflowY: "auto",
-            WebkitOverflowScrolling: "touch",
           }}
         >
           <div className="brand desktop-only">
